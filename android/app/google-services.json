@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "369760661333",
+    "project_id": "contact-photos-60e2a",
+    "storage_bucket": "contact-photos-60e2a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:369760661333:android:c8b1401ba17e78998a09dc",
+        "android_client_info": {
+          "package_name": "com.example.contact_photos"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDZT_7TwU1eWOOz_G_rM_8MLOcz8FR54a4"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
