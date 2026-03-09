@@ -5,6 +5,7 @@
 // gestures. You can also use WidgetTester to find child widgets in the widget
 // tree, read text, and verify that the values of widget properties are correct.
 
+import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 import 'package:contact_photos/main.dart';
@@ -18,6 +19,13 @@ void main() {
     expect(find.text('Search companies'), findsOneWidget);
     expect(find.text('USPS'), findsOneWidget);
     expect(find.text('Text number: 28777'), findsOneWidget);
-    expect(find.text('Create'), findsOneWidget);
+    expect(find.text('Create'), findsWidgets);
+
+    await tester.enterText(find.byType(TextField), 'citi');
+    await tester.pumpAndSettle();
+
+    expect(find.text('Citi Bank'), findsOneWidget);
+    expect(find.text('Text number: 692484'), findsOneWidget);
+    expect(find.text('USPS'), findsNothing);
   });
 }

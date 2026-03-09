@@ -21,7 +21,55 @@ const List<CompanyProfile> _companyProfiles = [
     name: 'USPS',
     phoneNumber: '28777',
     logoUrl:
-        'https://about.usps.com/newsroom/media-kit/mobile/USPS_Logo_128x128.jpg',
+        'https://uspsblog.com/wp-content/uploads/2015/11/USPS_Eagle-Symbol-web-size.png',
+  ),
+  CompanyProfile(
+    name: 'Mountain America Credit Union (MACU)',
+    phoneNumber: '62321',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Mountain+America+Credit+Union&background=1E3A8A&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'Harmon\'s Grocery',
+    phoneNumber: '39594',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Harmons+Grocery&background=166534&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'Citi Bank',
+    phoneNumber: '692484',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Citi+Bank&background=1D4ED8&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'Labcorp Billing',
+    phoneNumber: '47106',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Labcorp+Billing&background=0F766E&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'Vuori',
+    phoneNumber: '88674',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Vuori&background=0F172A&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'BladeHQ',
+    phoneNumber: '30251',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=BladeHQ&background=334155&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'Intermountain Health',
+    phoneNumber: '34698',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Intermountain+Health&background=0369A1&color=ffffff&size=128&bold=true',
+  ),
+  CompanyProfile(
+    name: 'Crumbl Cookies',
+    phoneNumber: '278625',
+    logoUrl:
+        'https://ui-avatars.com/api/?name=Crumbl+Cookies&background=9D174D&color=ffffff&size=128&bold=true',
   ),
 ];
 
@@ -43,7 +91,8 @@ class _HomePageState extends State<HomePage> {
       return _companyProfiles;
     }
     return _companyProfiles
-        .where((company) => company.name.toLowerCase().contains(normalizedQuery))
+        .where(
+            (company) => company.name.toLowerCase().contains(normalizedQuery))
         .toList();
   }
 
@@ -104,10 +153,7 @@ class _HomePageState extends State<HomePage> {
   }
 
   Future<Contact?> _findExistingContact(CompanyProfile company) async {
-    final contacts = await FlutterContacts.getContacts(
-      withProperties: true,
-      query: company.name,
-    );
+    final contacts = await FlutterContacts.getContacts(withProperties: true);
 
     for (final contact in contacts) {
       for (final phone in contact.phones) {
@@ -123,7 +169,8 @@ class _HomePageState extends State<HomePage> {
   Future<Uint8List> _fetchLogoBytes(String logoUrl) async {
     final response = await http.get(Uri.parse(logoUrl));
     if (response.statusCode != 200) {
-      throw Exception('Logo download failed with status ${response.statusCode}');
+      throw Exception(
+          'Logo download failed with status ${response.statusCode}');
     }
     return response.bodyBytes;
   }
@@ -134,7 +181,8 @@ class _HomePageState extends State<HomePage> {
 
   void _showMessage(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context)
+        .showSnackBar(SnackBar(content: Text(message)));
   }
 
   @override
@@ -195,7 +243,8 @@ class _HomePageState extends State<HomePage> {
                               ),
                             ),
                             title: Text(company.name),
-                            subtitle: Text('Text number: ${company.phoneNumber}'),
+                            subtitle:
+                                Text('Text number: ${company.phoneNumber}'),
                             trailing: isCreating
                                 ? const SizedBox(
                                     width: 24,
