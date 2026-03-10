@@ -20,9 +20,9 @@ EXTERNAL SOURCES:
 
 SPEC CHECKSUMS:
   Flutter: cabc95a1d2626b1b06e7179b784ebcf0c0cde467
-  flutter_contacts: edb1c5ce76aa433e20e6cb14c615f4c0b66e0983
-  permission_handler_apple: 9878588469a2b0d0fc1e048d9f43605f92e6cec2
+  flutter_contacts: 5383945387e7ca37cf963d4be57c21f2fc15ca9f
+  permission_handler_apple: 4ed2196e43d0651e8ff7ca3483a069d469701f2d
 
 PODFILE CHECKSUM: 4f1c12611da7338d21589c0b2ecd6bd20b109694
 
-COCOAPODS: 1.15.2
+COCOAPODS: 1.16.2
