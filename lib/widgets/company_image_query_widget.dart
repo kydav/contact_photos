@@ -1,10 +1,12 @@
 import 'dart:convert';
 import 'dart:typed_data';
 
-import 'package:firebase_ai/firebase_ai.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:http/http.dart' as http;
+
+const _googleCseApiKey = String.fromEnvironment('GOOGLE_CSE_API_KEY');
+const _googleCseCx = String.fromEnvironment('GOOGLE_CSE_CX');
 
 class CompanyImageOption {
   const CompanyImageOption({
@@ -37,12 +39,19 @@ class CompanyImageQueryWidget extends HookWidget {
     final imageOptions = useState<List<CompanyImageOption>>([]);
 
     Future<void> searchCompanyImages() async {
+      if (_googleCseApiKey.isEmpty || _googleCseCx.isEmpty) {
+        errorText.value =
+            'Missing Google CSE config. Run with --dart-define=GOOGLE_CSE_API_KEY=... --dart-define=GOOGLE_CSE_CX=...';
+        imageOptions.value = [];
+        return;
+      }
+
       isLoading.value = true;
       errorText.value = null;
       imageOptions.value = [];
 
       try {
-        final urls = await _queryImageUrlsFromGemini(
+        final urls = await _queryImageUrlsFromCustomSearch(
           companyName: companyName,
           websiteUrl: companyWebsiteUrl,
         );
@@ -130,86 +139,95 @@ class CompanyImageQueryWidget extends HookWidget {
   }
 }
 
-Future<List<String>> _queryImageUrlsFromGemini({
+Future<List<String>> _queryImageUrlsFromCustomSearch({
   required String companyName,
   required String websiteUrl,
 }) async {
-  final model = FirebaseAI.googleAI().generativeModel(
-    model: 'gemini-2.5-flash',
-    generationConfig: GenerationConfig(responseMimeType: 'application/json'),
-  );
+  final urls = <String>{};
+  final websiteHost = _extractHost(websiteUrl);
+  final queries = <String>[
+    '"$companyName" official logo',
+    '"$companyName" brand logo',
+    if (websiteHost != null && websiteHost.isNotEmpty)
+      'site:$websiteHost "$companyName" logo',
+  ];
 
-  final response = await model.generateContent([
-    Content.text('''
-Return JSON only in this format:
-{
-  "imageUrls": [
-    "https://example.com/logo.png"
-  ]
-}
-
-Task:
-- Find up to 8 likely logo or branding image URLs for "$companyName".
-- Use "$websiteUrl" as the primary website reference when selecting candidates.
-- Prefer direct image URLs.
-'''),
-  ]);
-
-  final parsedUrls = _extractImageUrls(response.text);
-  if (parsedUrls.isEmpty) {
-    throw Exception('No image URLs returned by AI.');
-  }
-  return parsedUrls;
-}
-
-List<String> _extractImageUrls(String? responseText) {
-  if (responseText == null || responseText.trim().isEmpty) {
-    return [];
-  }
-
-  final jsonPayload = _extractJsonPayload(responseText);
-  if (jsonPayload == null) {
-    return [];
-  }
-
-  try {
-    final decoded = jsonDecode(jsonPayload);
-    final values = decoded is Map<String, dynamic>
-        ? decoded['imageUrls']
-        : decoded is List
-            ? decoded
-            : null;
-    if (values is! List) return [];
-
-    final urls = <String>{};
-    for (final value in values) {
-      final rawUrl = (value as String?)?.trim();
-      if (rawUrl == null || rawUrl.isEmpty) continue;
-      final uri = Uri.tryParse(rawUrl);
-      if (uri == null || uri.host.isEmpty) continue;
-      if (uri.scheme != 'https' && uri.scheme != 'http') continue;
-      urls.add(uri.toString());
-      if (urls.length >= 8) break;
+  for (final query in queries) {
+    final queryResults = await _queryCustomSearchForImages(query);
+    urls.addAll(queryResults);
+    if (urls.length >= 12) {
+      break;
     }
-    return urls.toList();
-  } catch (_) {
-    return [];
   }
+
+  if (urls.isEmpty) {
+    throw Exception('No image URLs returned by Google Custom Search.');
+  }
+  return urls.take(12).toList();
 }
 
-String? _extractJsonPayload(String responseText) {
-  final trimmed = responseText.trim();
-  if ((trimmed.startsWith('{') && trimmed.endsWith('}')) ||
-      (trimmed.startsWith('[') && trimmed.endsWith(']'))) {
-    return trimmed;
+Future<List<String>> _queryCustomSearchForImages(String query) async {
+  final uri = Uri.https('www.googleapis.com', '/customsearch/v1', {
+    'key': _googleCseApiKey,
+    'cx': _googleCseCx,
+    'q': query,
+    'searchType': 'image',
+    'num': '10',
+    'safe': 'active',
+    'imgType': 'photo',
+  });
+
+  final response = await http.get(
+    uri,
+    headers: const {
+      'User-Agent': 'ContactPhotos/1.0',
+      'Accept': 'application/json',
+    },
+  ).timeout(const Duration(seconds: 15));
+
+  if (response.statusCode != 200) {
+    final preview = response.body.length > 180
+        ? '${response.body.substring(0, 180)}...'
+        : response.body;
+    throw Exception('Google CSE error ${response.statusCode}: $preview');
   }
 
-  final objectStart = trimmed.indexOf('{');
-  final objectEnd = trimmed.lastIndexOf('}');
-  if (objectStart >= 0 && objectEnd > objectStart) {
-    return trimmed.substring(objectStart, objectEnd + 1);
+  final decoded = jsonDecode(response.body);
+  if (decoded is! Map<String, dynamic>) {
+    return [];
   }
-  return null;
+
+  final items = decoded['items'];
+  if (items is! List) {
+    return [];
+  }
+
+  final urls = <String>{};
+  for (final item in items) {
+    if (item is! Map<String, dynamic>) continue;
+    final rawLink = (item['link'] as String?)?.trim();
+    if (rawLink == null || rawLink.isEmpty) continue;
+    final linkUri = Uri.tryParse(rawLink);
+    if (linkUri == null || linkUri.host.isEmpty) continue;
+    if (linkUri.scheme != 'https' && linkUri.scheme != 'http') continue;
+    if (_isLikelySvgUrl(linkUri.toString())) continue;
+
+    final mime = (item['mime'] as String?)?.toLowerCase();
+    if (mime != null && mime.contains('svg')) continue;
+
+    urls.add(linkUri.toString());
+    if (urls.length >= 10) break;
+  }
+  return urls.toList();
+}
+
+String? _extractHost(String rawUrl) {
+  final uri = Uri.tryParse(rawUrl.trim());
+  if (uri == null || uri.host.isEmpty) {
+    return null;
+  }
+  final host = uri.host.toLowerCase();
+  return host.startsWith('www.') ? host.substring(4) : host;
 }
 
 Future<List<CompanyImageOption>> _loadRenderableImageOptions(
@@ -240,11 +258,46 @@ Future<Uint8List?> _downloadImageBytes(String imageUrl) async {
     }
 
     final contentType = response.headers['content-type']?.toLowerCase() ?? '';
-    if (!contentType.startsWith('image/')) {
+    if (contentType.contains('svg')) {
+      return null;
+    }
+    if (!contentType.startsWith('image/') &&
+        !_looksLikeImageBytes(response.bodyBytes)) {
       return null;
     }
     return response.bodyBytes;
   } catch (_) {
     return null;
   }
+}
+
+bool _isLikelySvgUrl(String url) {
+  final lower = url.toLowerCase();
+  return lower.contains('.svg') || lower.contains('format=svg');
+}
+
+bool _looksLikeImageBytes(Uint8List bytes) {
+  if (bytes.length < 12) {
+    return false;
+  }
+
+  final isPng = bytes[0] == 0x89 &&
+      bytes[1] == 0x50 &&
+      bytes[2] == 0x4E &&
+      bytes[3] == 0x47;
+  final isJpeg = bytes[0] == 0xFF && bytes[1] == 0xD8;
+  final isGif = bytes[0] == 0x47 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x38;
+  final isWebp = bytes[0] == 0x52 &&
+      bytes[1] == 0x49 &&
+      bytes[2] == 0x46 &&
+      bytes[3] == 0x46 &&
+      bytes[8] == 0x57 &&
+      bytes[9] == 0x45 &&
+      bytes[10] == 0x42 &&
+      bytes[11] == 0x50;
+
+  return isPng || isJpeg || isGif || isWebp;
 }
