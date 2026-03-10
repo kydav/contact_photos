@@ -1,0 +1,32 @@
+{
+  stories:
+    {
+      ID: 1,
+      Title: "Revert current implementation of home page",
+      Goal: "The current implementation of the home page is very fragmented and difficult to maintain.",
+      Acceptance Criteria: "The home page code will be reverted back to a blank page that says Add Contact",
+      Out Of Scope: "implementing any new home page features",
+    },
+  {
+    ID: 2,
+    Title: "Create a widget in it's own file specifically for querying companies",
+    Goal:
+      "This widget will have an input field and will allow the user to input a company name and then hit enter or tap a button to search for companies.
+      This widget will also use the firebase gemini api to query for companies based on the search query and return a list of possible companies that match the search query.
+      the widget will show the possible companies that match the search query and allow the user to select one of them. Each company will have a name, and a website url.
+      The website url can be tapped, to open a website in app webview to make sure that is the correct company.
+      The user can tap on the company URl button to view the website or each row will have a select button that will allow the user to select the company and then the widget will return the company name and website url to the parent widget.",
+    Acceptance Criteria: "A widget is created in its own file that allows the user to search for companies and select one of them. The widget returns the company name and website url to the parent widget. Include this search widget in the home page",
+    Out Of Scope: "handling the selected company in the parent widget, implementing any new features for the company search widget",
+  },
+  {
+    ID: 3,
+    Title: "Create a widget in it's own file specifically for using the company queried in the previous story to query possible images for the company and allow the user to select one of them",
+    Goal:
+      "This widget should be able to function independently and should be able to receive the company name and website url from the previous widget. This widget will use the firebase gemini api to query for possible images for the company based on the company name and website url.
+      The widget will show the possible images that match the search query and allow the user to select one of them.
+      Each image will have a thumbnail and a select button that will allow the user to select the image and then the widget will return the selected image url to the parent widget.",
+    Acceptance Criteria: "A widget is created in its own file that allows the user to search for images based on the company name and website url and select one of them. The widget returns the selected image url to the parent widget. Include this image search widget in the home page",
+    Out Of Scope: "handling the selected image in the parent widget, implementing any new features for the image search widget",
+  },
+}
