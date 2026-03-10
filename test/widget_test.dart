@@ -10,9 +10,14 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:contact_photos/main.dart';
 
 void main() {
-  testWidgets('shows add contact placeholder', (WidgetTester tester) async {
+  testWidgets('shows company query widget on home page', (
+    WidgetTester tester,
+  ) async {
     await tester.pumpWidget(const MyApp());
 
     expect(find.text('Add Contact'), findsOneWidget);
+    expect(find.text('Search Companies'), findsOneWidget);
+    expect(find.text('Company name'), findsOneWidget);
+    expect(find.text('Search'), findsOneWidget);
   });
 }
