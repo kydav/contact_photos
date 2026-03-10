@@ -10,16 +10,18 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:contact_photos/main.dart';
 
 void main() {
-  testWidgets('shows onboarding flow controls', (
+  testWidgets('shows company query widget on home page', (
     WidgetTester tester,
   ) async {
     await tester.pumpWidget(const MyApp());
 
-    expect(find.text('Step 1: Scan message senders'), findsOneWidget);
-    expect(find.text('Scan senders'), findsOneWidget);
-    expect(find.text('Step 2: Enter company name'), findsOneWidget);
+    expect(find.text('Add Contact'), findsOneWidget);
+    expect(find.text('Search Companies'), findsOneWidget);
     expect(find.text('Company name'), findsOneWidget);
-    expect(find.text('Generate image options'), findsOneWidget);
-    expect(find.text('Create contact'), findsOneWidget);
+    expect(find.text('Search'), findsOneWidget);
+    expect(
+      find.text('Select a company above to search for images.'),
+      findsOneWidget,
+    );
   });
 }
