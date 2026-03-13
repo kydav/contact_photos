@@ -9,27 +9,30 @@ class HomePage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final selectedCompany = useState<CompanySearchResult?>(null);
+    final controller = usePageController();
 
     return Scaffold(
       appBar: AppBar(title: const Text('Add Contact')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
-        child: ListView(
+        child: PageView(
+          controller: controller,
+          physics: const NeverScrollableScrollPhysics(),
           children: [
             CompanyQueryWidget(
               onCompanySelected: (company) {
                 selectedCompany.value = company;
+                controller.nextPage(
+                  duration: const Duration(milliseconds: 300),
+                  curve: Curves.easeInOut,
+                );
               },
             ),
-            const SizedBox(height: 20),
-            if (selectedCompany.value == null)
-              const Text('Select a company above to search for images.')
-            else
-              CompanyImageQueryWidget(
-                companyName: selectedCompany.value!.name,
-                companyWebsiteUrl: selectedCompany.value!.websiteUrl,
-                onImageSelected: (_) {},
-              ),
+            CompanyImageQueryWidget(
+              companyName: selectedCompany.value?.name,
+              companyWebsiteUrl: selectedCompany.value?.websiteUrl,
+              onImageSelected: (_) {},
+            ),
           ],
         ),
       ),

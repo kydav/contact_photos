@@ -24,8 +24,8 @@ class CompanyImageQueryWidget extends HookWidget {
     required this.onImageSelected,
   });
 
-  final String companyName;
-  final String companyWebsiteUrl;
+  final String? companyName;
+  final String? companyWebsiteUrl;
   final CompanyImageSelectedCallback onImageSelected;
 
   @override
@@ -45,8 +45,8 @@ class CompanyImageQueryWidget extends HookWidget {
 
       try {
         final primaryUrls = await _queryImageUrlsFromWebsite(
-          companyName: companyName,
-          websiteUrl: companyWebsiteUrl,
+          companyName: companyName!,
+          websiteUrl: companyWebsiteUrl!,
         );
 
         progressLabel.value =
@@ -69,8 +69,8 @@ class CompanyImageQueryWidget extends HookWidget {
           progressLabel.value = 'Trying logos-world.net fallback...';
 
           final logosWorldUrls = await _queryImageUrlsFromLogosWorld(
-            companyName: companyName,
-            companyWebsiteUrl: companyWebsiteUrl,
+            companyName: companyName!,
+            companyWebsiteUrl: companyWebsiteUrl!,
           );
 
           if (logosWorldUrls.isNotEmpty) {

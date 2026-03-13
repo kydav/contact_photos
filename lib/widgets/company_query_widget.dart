@@ -108,31 +108,35 @@ class CompanyQueryWidget extends HookWidget {
         ],
         if (companies.value.isNotEmpty) ...[
           const SizedBox(height: 12),
-          ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: companies.value.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 8),
-            itemBuilder: (context, index) {
-              final company = companies.value[index];
-              return Card(
-                child: ListTile(
-                  title: Text(company.name),
-                  subtitle: TextButton(
-                    onPressed: () => openWebsite(company),
-                    style: TextButton.styleFrom(
-                      alignment: Alignment.centerLeft,
-                      padding: EdgeInsets.zero,
+          Expanded(
+            child: SingleChildScrollView(
+              child: ListView.separated(
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                itemCount: companies.value.length,
+                separatorBuilder: (_, __) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final company = companies.value[index];
+                  return Card(
+                    child: ListTile(
+                      title: Text(company.name),
+                      subtitle: TextButton(
+                        onPressed: () => openWebsite(company),
+                        style: TextButton.styleFrom(
+                          alignment: Alignment.centerLeft,
+                          padding: EdgeInsets.zero,
+                        ),
+                        child: Text(company.websiteUrl),
+                      ),
+                      trailing: FilledButton(
+                        onPressed: () => onCompanySelected(company),
+                        child: const Text('Select'),
+                      ),
                     ),
-                    child: Text(company.websiteUrl),
-                  ),
-                  trailing: FilledButton(
-                    onPressed: () => onCompanySelected(company),
-                    child: const Text('Select'),
-                  ),
-                ),
-              );
-            },
+                  );
+                },
+              ),
+            ),
           ),
         ],
       ],
@@ -149,18 +153,18 @@ Future<List<CompanySearchResult>> _queryCompaniesFromGemini(
 
   final response = await model.generateContent([
     Content.text('''
-Return JSON only in this format:
-{
-  "companies": [
-    {"name":"Company Name","websiteUrl":"https://example.com"}
-  ]
-}
+      Return JSON only in this format:
+      {
+        "companies": [
+          {"name":"Company Name","websiteUrl":"https://example.com"}
+        ]
+      }
 
-Task:
-- Find up to 6 likely companies that match the query "$query".
-- Include only real companies and their official website URLs.
-- Use absolute https URLs.
-'''),
+      Task:
+      - Find up to 6 likely companies that match the query "$query".
+      - Include only real companies and their official website URLs.
+      - Use absolute https URLs.
+      '''),
   ]);
 
   final parsedCompanies = _parseCompanies(response.text);
