@@ -33,22 +33,69 @@ class CompanyImageQueryWidget extends HookWidget {
     final isLoading = useState(false);
     final errorText = useState<String?>(null);
     final imageOptions = useState<List<CompanyImageOption>>([]);
+    final progressValue = useState<double?>(null);
+    final progressLabel = useState<String?>(null);
 
     Future<void> searchCompanyImages() async {
       isLoading.value = true;
       errorText.value = null;
       imageOptions.value = [];
+      progressValue.value = null;
+      progressLabel.value = 'Collecting image candidates from website...';
 
       try {
-        final urls = await _queryImageUrlsFromWebsite(
+        final primaryUrls = await _queryImageUrlsFromWebsite(
           companyName: companyName,
           websiteUrl: companyWebsiteUrl,
         );
 
-        imageOptions.value = await _loadRenderableImageOptions(urls);
+        progressLabel.value =
+            'Validating ${primaryUrls.length} candidate images...';
+        imageOptions.value = await _loadRenderableImageOptions(
+          primaryUrls,
+          onProgress: (completed, total) {
+            if (total <= 0) {
+              progressValue.value = null;
+              progressLabel.value = 'No image candidates to validate.';
+              return;
+            }
+            progressValue.value = completed / total;
+            progressLabel.value = 'Checking image $completed of $total...';
+          },
+        );
+
+        if (imageOptions.value.length <= 3) {
+          progressValue.value = null;
+          progressLabel.value = 'Trying logos-world.net fallback...';
+
+          final logosWorldUrls = await _queryImageUrlsFromLogosWorld(
+            companyName: companyName,
+            companyWebsiteUrl: companyWebsiteUrl,
+          );
+
+          if (logosWorldUrls.isNotEmpty) {
+            final additionalOptions = await _loadRenderableImageOptions(
+              logosWorldUrls,
+              onProgress: (completed, total) {
+                if (total <= 0) return;
+                progressValue.value = completed / total;
+                progressLabel.value =
+                    'Checking logos-world image $completed of $total...';
+              },
+            );
+            imageOptions.value = _mergeImageOptions(
+              imageOptions.value,
+              additionalOptions,
+            );
+          }
+        }
+
         if (imageOptions.value.isEmpty) {
           errorText.value =
               'No renderable images found from website metadata or assets.';
+        } else {
+          progressValue.value = 1;
+          progressLabel.value = 'Found ${imageOptions.value.length} images.';
         }
       } catch (error) {
         errorText.value = 'Could not search company images: $error';
@@ -75,7 +122,14 @@ class CompanyImageQueryWidget extends HookWidget {
         ),
         if (isLoading.value) ...[
           const SizedBox(height: 8),
-          const LinearProgressIndicator(),
+          LinearProgressIndicator(value: progressValue.value),
+          if (progressLabel.value != null) ...[
+            const SizedBox(height: 6),
+            Text(
+              progressLabel.value!,
+              style: const TextStyle(fontSize: 12),
+            ),
+          ],
         ],
         if (errorText.value != null) ...[
           const SizedBox(height: 8),
@@ -130,6 +184,25 @@ class CompanyImageQueryWidget extends HookWidget {
   }
 }
 
+List<CompanyImageOption> _mergeImageOptions(
+  List<CompanyImageOption> primary,
+  List<CompanyImageOption> additional,
+) {
+  final merged = <CompanyImageOption>[];
+  final seen = <String>{};
+
+  for (final option in [...primary, ...additional]) {
+    if (!seen.add(option.url)) {
+      continue;
+    }
+    merged.add(option);
+    if (merged.length >= 8) {
+      break;
+    }
+  }
+  return merged;
+}
+
 Future<List<String>> _queryImageUrlsFromWebsite({
   required String companyName,
   required String websiteUrl,
@@ -174,6 +247,110 @@ Future<List<String>> _queryImageUrlsFromWebsite({
   );
 
   return rankedUrls.take(24).toList();
+}
+
+Future<List<String>> _queryImageUrlsFromLogosWorld({
+  required String companyName,
+  required String companyWebsiteUrl,
+}) async {
+  final pageUris = _buildLogosWorldPageUris(
+    companyName: companyName,
+    companyWebsiteUrl: companyWebsiteUrl,
+  );
+  if (pageUris.isEmpty) {
+    return [];
+  }
+
+  final companyTokens = _extractCompanyTokens(companyName);
+  final discoveredUrls = <String>{};
+
+  final responses = await Future.wait(pageUris.map(_tryGet));
+  for (var i = 0; i < responses.length; i++) {
+    final response = responses[i];
+    if (response == null ||
+        response.statusCode != 200 ||
+        response.bodyBytes.isEmpty) {
+      continue;
+    }
+
+    final pageUri = pageUris[i];
+    if (_responseLooksLikeImage(response)) {
+      discoveredUrls.add(pageUri.toString());
+      continue;
+    }
+
+    if (_responseLooksLikeHtml(response)) {
+      discoveredUrls.addAll(
+        _extractLogoImageUrlsFromHtml(
+          response.body,
+          pageUri,
+          companyTokens: companyTokens,
+        ),
+      );
+    }
+  }
+
+  final ranked = _rankImageCandidates(
+    discoveredUrls.toList(),
+    'logos-world.net',
+    companyTokens,
+  );
+  return ranked.take(12).toList();
+}
+
+List<Uri> _buildLogosWorldPageUris({
+  required String companyName,
+  required String companyWebsiteUrl,
+}) {
+  final slugCandidates = <String>{};
+  final nameTokens = _extractCompanyTokens(companyName);
+
+  final fullSlug = _slugify(companyName);
+  if (fullSlug.isNotEmpty) {
+    slugCandidates.add(fullSlug);
+  }
+
+  if (nameTokens.isNotEmpty) {
+    slugCandidates.add(nameTokens.join('-'));
+  }
+  if (nameTokens.length >= 2) {
+    slugCandidates.add('${nameTokens.first}-${nameTokens[1]}');
+  }
+
+  final websiteHost = _extractDomainToken(companyWebsiteUrl);
+  if (websiteHost != null && websiteHost.isNotEmpty) {
+    slugCandidates.add(_slugify(websiteHost));
+  }
+
+  final cleanedCandidates = slugCandidates
+      .map((slug) => slug.replaceAll(RegExp(r'-+'), '-'))
+      .where((slug) => slug.isNotEmpty)
+      .take(6);
+
+  return cleanedCandidates
+      .map((slug) => Uri.parse('https://logos-world.net/$slug-logo/'))
+      .toList();
+}
+
+String _slugify(String value) {
+  final lower = value.toLowerCase();
+  final normalized = lower
+      .replaceAll('&', ' and ')
+      .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
+      .replaceAll(RegExp(r'-+'), '-')
+      .replaceAll(RegExp(r'^-|-$'), '');
+  return normalized;
+}
+
+String? _extractDomainToken(String websiteUrl) {
+  final uri = _normalizeWebsiteUri(websiteUrl);
+  if (uri == null || uri.host.isEmpty) {
+    return null;
+  }
+  final host = uri.host.toLowerCase();
+  final withoutWww = host.startsWith('www.') ? host.substring(4) : host;
+  final token = withoutWww.split('.').first;
+  return token.isEmpty ? null : token;
 }
 
 Uri? _normalizeWebsiteUri(String websiteUrl) {
@@ -259,7 +436,7 @@ Future<http.Response?> _tryGet(Uri uri) async {
           'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile',
       'Accept':
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-    }).timeout(const Duration(seconds: 10));
+    }).timeout(const Duration(seconds: 6));
   } catch (_) {
     return null;
   }
@@ -426,15 +603,49 @@ List<String> _rankImageCandidates(
 }
 
 Future<List<CompanyImageOption>> _loadRenderableImageOptions(
-  List<String> urls,
-) async {
+  List<String> urls, {
+  void Function(int completed, int total)? onProgress,
+}) async {
+  final candidateUrls = urls.take(16).toList();
   final results = <CompanyImageOption>[];
-  for (final url in urls) {
-    if (_isLikelySocialAssetUrl(url)) continue;
-    final bytes = await _downloadImageBytes(url);
-    if (bytes == null) continue;
-    results.add(CompanyImageOption(url: url, bytes: bytes));
-    if (results.length >= 8) break;
+  final total = candidateUrls.length;
+  var completed = 0;
+  onProgress?.call(0, total);
+
+  const chunkSize = 4;
+  for (var start = 0; start < candidateUrls.length; start += chunkSize) {
+    if (results.length >= 8) {
+      break;
+    }
+
+    final end = (start + chunkSize < candidateUrls.length)
+        ? start + chunkSize
+        : candidateUrls.length;
+    final chunk = candidateUrls.sublist(start, end);
+
+    final futures = chunk
+        .map((url) async => (url: url, bytes: await _downloadImageBytes(url)))
+        .toList();
+    final resolved = await Future.wait(futures);
+
+    for (final item in resolved) {
+      completed += 1;
+      onProgress?.call(completed, total);
+
+      final url = item.url;
+      final bytes = item.bytes;
+      if (_isLikelySocialAssetUrl(url)) continue;
+      if (bytes == null) continue;
+
+      results.add(CompanyImageOption(url: url, bytes: bytes));
+      if (results.length >= 8) {
+        break;
+      }
+    }
+  }
+
+  if (total == 0) {
+    onProgress?.call(0, 0);
   }
   return results;
 }
@@ -443,7 +654,7 @@ Future<Uint8List?> _downloadImageBytes(
   String imageUrl, {
   int depth = 0,
 }) async {
-  if (depth > 2) return null;
+  if (depth > 1) return null;
 
   try {
     final uri = Uri.parse(imageUrl);
@@ -452,7 +663,7 @@ Future<Uint8List?> _downloadImageBytes(
           'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile',
       'Accept':
           'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
-    }).timeout(const Duration(seconds: 10));
+    }).timeout(const Duration(seconds: 6));
 
     if (response.statusCode != 200 || response.bodyBytes.isEmpty) {
       return null;
