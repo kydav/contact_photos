@@ -85,9 +85,7 @@ class ImageLogoHelpers {
       addCandidate(tag.extractHtmlAttribute('content'));
     }
 
-    for (final logoUrl in html.extractJsonLdLogoUrls()) {
-      addCandidate(logoUrl);
-    }
+    html.extractJsonLdLogoUrls().forEach(addCandidate);
 
     for (final tag in html.extractHtmlStartTags('link')) {
       final rel = tag.extractHtmlAttribute('rel')?.toLowerCase() ?? '';
@@ -111,10 +109,9 @@ class ImageLogoHelpers {
 
       addCandidate(tag.extractHtmlAttribute('src'));
       addCandidate(tag.extractHtmlAttribute('data-src'));
-      for (final srcsetUrl in (tag.extractHtmlAttribute('srcset') ?? '')
-          .extractUrlsFromSrcset()) {
-        addCandidate(srcsetUrl);
-      }
+      (tag.extractHtmlAttribute('srcset') ?? '')
+          .extractUrlsFromSrcset()
+          .forEach(addCandidate);
     }
 
     return urls.toList();
@@ -308,7 +305,7 @@ class ImageLogoHelpers {
     }
 
     final cleanedCandidates = slugCandidates
-        .map((slug) => slug.replaceAll(RegExp(r'-+'), '-'))
+        .map((slug) => slug.replaceAll(RegExp('-+'), '-'))
         .where((slug) => slug.isNotEmpty)
         .take(6);
 

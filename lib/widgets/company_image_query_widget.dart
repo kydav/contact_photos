@@ -7,10 +7,7 @@ typedef CompanyImageSelectedCallback = void Function(String imageUrl);
 
 class CompanyImageQueryWidget extends HookWidget {
   const CompanyImageQueryWidget({
-    super.key,
-    required this.companyName,
-    required this.companyWebsiteUrl,
-    required this.onImageSelected,
+    required this.companyName, required this.companyWebsiteUrl, required this.onImageSelected, super.key,
   });
 
   final String? companyName;

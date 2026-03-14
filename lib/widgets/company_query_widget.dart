@@ -8,8 +8,7 @@ typedef CompanySelectedCallback = void Function(CompanySearchResult company);
 
 class CompanyQueryWidget extends HookWidget {
   const CompanyQueryWidget({
-    super.key,
-    required this.onCompanySelected,
+    required this.onCompanySelected, super.key,
   });
 
   final CompanySelectedCallback onCompanySelected;
@@ -131,9 +130,7 @@ class CompanyQueryWidget extends HookWidget {
 
 class CompanyWebsitePage extends HookWidget {
   const CompanyWebsitePage({
-    super.key,
-    required this.title,
-    required this.websiteUrl,
+    required this.title, required this.websiteUrl, super.key,
   });
 
   final String title;

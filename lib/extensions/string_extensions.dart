@@ -197,7 +197,7 @@ extension StringExtensions on String {
 
   List<String> extractCompanyTokens() {
     final rawTokens = toLowerCase()
-        .split(RegExp(r'[^a-z0-9]+'))
+        .split(RegExp('[^a-z0-9]+'))
         .where((token) => token.length >= 3);
     return rawTokens.toSet().toList();
   }
@@ -273,7 +273,7 @@ extension StringExtensions on String {
       if (equalsIndex >= length) return null;
 
       final quote = this[equalsIndex];
-      if (quote == '"' || quote == '\'') {
+      if (quote == '"' || quote == "'") {
         final valueStart = equalsIndex + 1;
         final valueEnd = indexOf(quote, valueStart);
         if (valueEnd == -1) return null;
@@ -325,8 +325,8 @@ extension StringExtensions on String {
     final lower = toLowerCase();
     final normalized = lower
         .replaceAll('&', ' and ')
-        .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
-        .replaceAll(RegExp(r'-+'), '-')
+        .replaceAll(RegExp('[^a-z0-9]+'), '-')
+        .replaceAll(RegExp('-+'), '-')
         .replaceAll(RegExp(r'^-|-$'), '');
     return normalized;
   }
