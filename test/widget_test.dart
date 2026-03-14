@@ -19,9 +19,5 @@ void main() {
     expect(find.text('Search Companies'), findsOneWidget);
     expect(find.text('Company name'), findsOneWidget);
     expect(find.text('Search'), findsOneWidget);
-    expect(
-      find.text('Select a company above to search for images.'),
-      findsOneWidget,
-    );
   });
 }

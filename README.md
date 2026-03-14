@@ -1,16 +1,43 @@
-# contact_photos
+# Contact Photos
 
-A new Flutter project.
+Create contacts for companies that text users and attach a company photo/logo.
 
-## Getting Started
+## Secrets and Firebase config
 
-This project is a starting point for a Flutter application.
+This repository is set up to keep Firebase keys/config out of source control.
 
-A few resources to get you started if this is your first Flutter project:
+### Local development setup
+1. Download Firebase config files from your Firebase project:
+   - `android/app/google-services.json`
+   - `ios/Runner/GoogleService-Info.plist`
+2. Place them in those exact paths locally (they are gitignored).
+3. Run the app as normal (`flutter run`).
 
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
+### GitHub secrets setup
+Add these repository secrets (Base64-encoded file contents):
+- `ANDROID_GOOGLE_SERVICES_JSON_B64`
+- `IOS_GOOGLE_SERVICE_INFO_PLIST_B64`
 
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+Encode files:
+```bash
+base64 -i android/app/google-services.json | pbcopy
+base64 -i ios/Runner/GoogleService-Info.plist | pbcopy
+```
+
+Decode them in GitHub Actions before build:
+```bash
+python3 - <<'PY'
+import base64, os, pathlib
+pathlib.Path("android/app").mkdir(parents=True, exist_ok=True)
+pathlib.Path("ios/Runner").mkdir(parents=True, exist_ok=True)
+pathlib.Path("android/app/google-services.json").write_bytes(
+    base64.b64decode(os.environ["ANDROID_GOOGLE_SERVICES_JSON_B64"])
+)
+pathlib.Path("ios/Runner/GoogleService-Info.plist").write_bytes(
+    base64.b64decode(os.environ["IOS_GOOGLE_SERVICE_INFO_PLIST_B64"])
+)
+PY
+```
+
+### Important
+If keys have ever been committed, rotate them in Firebase/GCP and consider rewriting git history before making the repository public.
