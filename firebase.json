@@ -1,1 +1,30 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"contact-photos-60e2a","appId":"1:369760661333:android:c8b1401ba17e78998a09dc","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"contact-photos-60e2a","appId":"1:369760661333:ios:0967dea6deaf26a88a09dc","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"contact-photos-60e2a","configurations":{"android":"1:369760661333:android:c8b1401ba17e78998a09dc","ios":"1:369760661333:ios:0967dea6deaf26a88a09dc"}}}}}}
+{
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "contact-photos-60e2a",
+          "appId": "1:369760661333:android:c8b1401ba17e78998a09dc",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "contact-photos-60e2a",
+          "appId": "1:369760661333:ios:0967dea6deaf26a88a09dc",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "contact-photos-60e2a",
+          "configurations": {
+            "android": "1:369760661333:android:c8b1401ba17e78998a09dc",
+            "ios": "1:369760661333:ios:0967dea6deaf26a88a09dc"
+          }
+        }
+      }
+    }
+  }
+}
