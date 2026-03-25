@@ -10,18 +10,20 @@ class CompanyImageQueryWidget extends HookWidget {
     required this.companyName,
     required this.companyWebsiteUrl,
     required this.onImageSelected,
+    required this.imageOptions,
     super.key,
   });
 
   final String? companyName;
   final String? companyWebsiteUrl;
   final CompanyImageSelectedCallback onImageSelected;
+  final ValueNotifier<List<CompanyImageOption>> imageOptions;
 
   @override
   Widget build(BuildContext context) {
     final isLoading = useState(false);
     final errorText = useState<String?>(null);
-    final imageOptions = useState<List<CompanyImageOption>>([]);
+
     final progressValue = useState<double?>(null);
     final progressLabel = useState<String?>(null);
 

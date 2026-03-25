@@ -19,6 +19,7 @@ class HomePage extends HookWidget {
     final controller = usePageController();
     final showLeading = useState(false);
     final resetSeed = useState(0);
+    final imageOptions = useState<List<CompanyImageOption>>([]);
 
     useEffect(() {
       void listener() {
@@ -43,6 +44,7 @@ class HomePage extends HookWidget {
       selectedCompany.value = null;
       selectedImage.value = null;
       resetSeed.value = resetSeed.value + 1;
+      imageOptions.value = [];
       await goToPage(0);
     }
 
@@ -81,6 +83,7 @@ class HomePage extends HookWidget {
               child: CompanyImageQueryWidget(
                 companyName: selectedCompany.value?.name,
                 companyWebsiteUrl: selectedCompany.value?.websiteUrl,
+                imageOptions: imageOptions,
                 onImageSelected: (imageOption) {
                   selectedImage.value = imageOption;
                   unawaited(goToPage(2));
