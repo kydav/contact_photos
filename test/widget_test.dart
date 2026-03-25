@@ -12,7 +12,7 @@ void main() {
   testWidgets('shows company query widget on home page', (
     WidgetTester tester,
   ) async {
-    await tester.pumpWidget(const MyApp());
+    await tester.pumpWidget(const MyApp(initialIntroShown: true));
 
     expect(find.text('Add Contact'), findsOneWidget);
     expect(find.text('Search Companies'), findsOneWidget);

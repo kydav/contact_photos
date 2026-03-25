@@ -1,6 +1,11 @@
+import 'dart:async';
+
 import 'package:contact_photos/home_page.dart';
+import 'package:contact_photos/screens/intro_carousel_screen.dart';
+import 'package:contact_photos/services/preferences_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_hooks/flutter_hooks.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -8,12 +13,46 @@ Future<void> main() async {
   runApp(const MyApp());
 }
 
-class MyApp extends StatelessWidget {
-  const MyApp({super.key});
+class MyApp extends HookWidget {
+  const MyApp({
+    this.initialIntroShown,
+    super.key,
+  });
 
-  // This widget is the root of your application.
+  final bool? initialIntroShown;
+
   @override
   Widget build(BuildContext context) {
+    final introShown = useState<bool?>(null);
+
+    useEffect(() {
+      if (initialIntroShown != null) {
+        introShown.value = initialIntroShown;
+        return null;
+      }
+
+      Future<void> loadIntroShown() async {
+        introShown.value = await PreferencesService.hasShownIntro();
+      }
+
+      unawaited(loadIntroShown());
+      return null;
+    }, const []);
+
+    final Widget home;
+    if (introShown.value == null) {
+      home = const Scaffold(body: Center(child: CircularProgressIndicator()));
+    } else if (introShown.value ?? false) {
+      home = const HomePage();
+    } else {
+      home = IntroCarouselScreen(
+        onFinished: () async {
+          await PreferencesService.setIntroShown(value: true);
+          introShown.value = true;
+        },
+      );
+    }
+
     return MaterialApp(
       title: 'Contact Photos',
       theme: ThemeData(
@@ -25,7 +64,7 @@ class MyApp extends StatelessWidget {
             seedColor: Colors.deepPurple, brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      home: const HomePage(),
+      home: home,
     );
   }
 }

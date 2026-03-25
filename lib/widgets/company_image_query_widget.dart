@@ -3,11 +3,14 @@ import 'package:contact_photos/models/company_image_option.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 
-typedef CompanyImageSelectedCallback = void Function(String imageUrl);
+typedef CompanyImageSelectedCallback = void Function(CompanyImageOption image);
 
 class CompanyImageQueryWidget extends HookWidget {
   const CompanyImageQueryWidget({
-    required this.companyName, required this.companyWebsiteUrl, required this.onImageSelected, super.key,
+    required this.companyName,
+    required this.companyWebsiteUrl,
+    required this.onImageSelected,
+    super.key,
   });
 
   final String? companyName;
@@ -23,6 +26,12 @@ class CompanyImageQueryWidget extends HookWidget {
     final progressLabel = useState<String?>(null);
 
     Future<void> searchCompanyImages() async {
+      if (companyName == null || companyWebsiteUrl == null) {
+        errorText.value = 'Select a company first to search for images.';
+        imageOptions.value = [];
+        return;
+      }
+
       isLoading.value = true;
       errorText.value = null;
       imageOptions.value = [];
@@ -52,7 +61,7 @@ class CompanyImageQueryWidget extends HookWidget {
 
         if (imageOptions.value.length <= 3) {
           progressValue.value = null;
-          progressLabel.value = 'Trying logos-world.net fallback...';
+          progressLabel.value = 'Attempting fallback...';
 
           final logosWorldUrls =
               await ImageLogoHelpers.queryImageUrlsFromLogosWorld(
@@ -126,47 +135,52 @@ class CompanyImageQueryWidget extends HookWidget {
             style: TextStyle(color: Theme.of(context).colorScheme.error),
           ),
         ],
-        if (imageOptions.value.isNotEmpty) ...[
-          const SizedBox(height: 12),
-          SizedBox(
-            height: 210,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              itemCount: imageOptions.value.length,
-              separatorBuilder: (_, __) => const SizedBox(width: 12),
-              itemBuilder: (context, index) {
-                final imageOption = imageOptions.value[index];
-                return SizedBox(
-                  width: 170,
-                  child: Card(
-                    child: Padding(
-                      padding: const EdgeInsets.all(8),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: ClipRRect(
-                              borderRadius: BorderRadius.circular(8),
-                              child: Image.memory(
-                                imageOption.bytes,
-                                fit: BoxFit.contain,
-                                width: double.infinity,
-                              ),
+        const SizedBox(height: 12),
+        Expanded(
+          child: imageOptions.value.isEmpty
+              ? const SizedBox.shrink()
+              : LayoutBuilder(
+                  builder: (context, constraints) {
+                    final crossAxisCount = constraints.maxWidth >= 700 ? 3 : 2;
+                    return GridView.builder(
+                      itemCount: imageOptions.value.length,
+                      gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: crossAxisCount,
+                        mainAxisSpacing: 12,
+                        crossAxisSpacing: 12,
+                        childAspectRatio: 0.75,
+                      ),
+                      itemBuilder: (context, index) {
+                        final imageOption = imageOptions.value[index];
+                        return Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: ClipRRect(
+                                    borderRadius: BorderRadius.circular(8),
+                                    child: Image.memory(
+                                      imageOption.bytes,
+                                      fit: BoxFit.contain,
+                                      width: double.infinity,
+                                    ),
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                FilledButton(
+                                  onPressed: () => onImageSelected(imageOption),
+                                  child: const Text('Select'),
+                                ),
+                              ],
                             ),
                           ),
-                          const SizedBox(height: 8),
-                          FilledButton(
-                            onPressed: () => onImageSelected(imageOption.url),
-                            child: const Text('Select'),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ],
+                        );
+                      },
+                    );
+                  },
+                ),
+        ),
       ],
     );
   }
