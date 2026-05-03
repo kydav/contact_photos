@@ -182,6 +182,11 @@ extension StringExtensions on String {
       'ytimg.com',
       'tiktok.com',
       'pinterest.com',
+      'pinterest_logo.png',
+      'x_logo.png',
+      'facebook_logo.png',
+      'threads_logo.png',
+      'youtube_logo.png',
     ];
     if (socialHosts.any(lower.contains)) {
       return true;
