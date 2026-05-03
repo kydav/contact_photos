@@ -79,7 +79,7 @@ class CompanyImageQueryWidget extends HookWidget {
                 if (total <= 0) return;
                 progressValue.value = completed / total;
                 progressLabel.value =
-                    'Checking logos-world image $completed of $total...';
+                    'Checking fallback images $completed of $total...';
               },
             );
             imageOptions.value = ImageLogoHelpers.mergeImageOptions(
@@ -89,9 +89,40 @@ class CompanyImageQueryWidget extends HookWidget {
           }
         }
 
+        if (imageOptions.value.length <= 3) {
+          progressValue.value = null;
+          progressLabel.value =
+              'Attempting tertiary fallback (social profiles)...';
+
+          final socialUrls =
+              await ImageLogoHelpers.queryImageUrlsFromSocialProfiles(
+            companyName: companyName!,
+            companyWebsiteUrl: companyWebsiteUrl!,
+          );
+
+          if (socialUrls.isNotEmpty) {
+            final socialOptions =
+                await ImageLogoHelpers.loadRenderableImageOptions(
+              socialUrls,
+              allowSocialAssetUrls: true,
+              onProgress: (completed, total) {
+                if (total <= 0) return;
+                progressValue.value = completed / total;
+                progressLabel.value =
+                    'Checking social image $completed of $total...';
+              },
+            );
+
+            imageOptions.value = ImageLogoHelpers.mergeImageOptions(
+              imageOptions.value,
+              socialOptions,
+            );
+          }
+        }
+
         if (imageOptions.value.isEmpty) {
           errorText.value =
-              'No renderable images found from website metadata or assets.';
+              'No renderable images found from website, fallback sources, or social profiles.';
         } else {
           progressValue.value = 1;
           progressLabel.value = 'Found ${imageOptions.value.length} images.';

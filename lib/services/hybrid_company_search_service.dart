@@ -6,8 +6,6 @@ import 'package:contact_photos/services/ai_service.dart';
 class HybridCompanySearchService {
   static Future<List<CompanySearchResult>> searchCompanies(String query) async {
     final localResult = await LocalCompanySearchService.search(query);
-    print(
-        'Local search found ${localResult.companies.length} companies with confidence ${localResult.confidence}');
     if (localResult.isHighConfidence) {
       return localResult.companies;
     }

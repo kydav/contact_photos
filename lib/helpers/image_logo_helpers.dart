@@ -51,6 +51,7 @@ class ImageLogoHelpers {
     String html,
     Uri baseUri, {
     List<String> companyTokens = const [],
+    bool allowSocialAssetUrls = false,
   }) {
     final urls = <String>{};
 
@@ -68,7 +69,7 @@ class ImageLogoHelpers {
       if (uri == null || uri.host.isEmpty) return;
       if (uri.scheme != 'http' && uri.scheme != 'https') return;
       if (absolute.isLikelySvgUrl()) return;
-      if (absolute.isLikelySocialAssetUrl()) return;
+      if (!allowSocialAssetUrls && absolute.isLikelySocialAssetUrl()) return;
 
       urls.add(uri.toString());
     }
@@ -120,6 +121,7 @@ class ImageLogoHelpers {
   static Future<List<CompanyImageOption>> loadRenderableImageOptions(
     List<String> urls, {
     void Function(int completed, int total)? onProgress,
+    bool allowSocialAssetUrls = false,
   }) async {
     final candidateUrls = urls.take(16).toList();
     final results = <CompanyImageOption>[];
@@ -149,7 +151,7 @@ class ImageLogoHelpers {
 
         final url = item.url;
         final bytes = item.bytes;
-        if (url.isLikelySocialAssetUrl()) continue;
+        if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) continue;
         if (bytes == null) continue;
 
         results.add(CompanyImageOption(url: url, bytes: bytes));
@@ -278,6 +280,154 @@ class ImageLogoHelpers {
       companyTokens,
     );
     return ranked.take(12).toList();
+  }
+
+  static Future<List<String>> queryImageUrlsFromSocialProfiles({
+    required String companyName,
+    required String companyWebsiteUrl,
+  }) async {
+    final websiteUri = companyWebsiteUrl.normalizeWebsiteUri();
+    if (websiteUri == null) {
+      return [];
+    }
+
+    final companyTokens = companyName.extractCompanyTokens();
+    final profileUris = <Uri>{};
+
+    final websiteCandidates = websiteUri.buildWebsiteCandidates();
+    for (final candidateUri in websiteCandidates) {
+      final response = await candidateUri.tryGet();
+      if (response == null || response.bodyBytes.isEmpty) {
+        continue;
+      }
+      if (!response.looksLikeHtml()) {
+        continue;
+      }
+
+      profileUris.addAll(
+        _extractSocialProfileUrisFromHtml(response.body, candidateUri),
+      );
+    }
+
+    profileUris.addAll(
+      ImageLogoHelpers.buildGuessedSocialProfileUris(
+        companyName: companyName,
+        companyWebsiteUrl: companyWebsiteUrl,
+      ),
+    );
+
+    if (profileUris.isEmpty) {
+      return [];
+    }
+
+    final discoveredUrls = <String>{};
+    final responses =
+        await Future.wait(profileUris.map((uri) => uri.tryGet()).toList());
+
+    for (var i = 0; i < responses.length; i++) {
+      final response = responses[i];
+      if (response == null ||
+          response.statusCode != 200 ||
+          response.bodyBytes.isEmpty) {
+        continue;
+      }
+
+      final profileUri = profileUris.elementAt(i);
+      if (response.looksLikeImage()) {
+        discoveredUrls.add(profileUri.toString());
+        continue;
+      }
+
+      if (response.looksLikeHtml()) {
+        discoveredUrls.addAll(
+          ImageLogoHelpers.extractLogoImageUrlsFromHtml(
+            response.body,
+            profileUri,
+            companyTokens: companyTokens,
+            allowSocialAssetUrls: true,
+          ),
+        );
+      }
+    }
+
+    final ranked = ImageLogoHelpers.rankImageCandidates(
+      discoveredUrls.toList(),
+      websiteUri.host,
+      companyTokens,
+    );
+    return ranked.take(12).toList();
+  }
+
+  static Set<Uri> _extractSocialProfileUrisFromHtml(String html, Uri baseUri) {
+    final profileUris = <Uri>{};
+    for (final tag in html.extractHtmlStartTags('a')) {
+      final href = tag.extractHtmlAttribute('href');
+      if (href == null || href.trim().isEmpty) {
+        continue;
+      }
+
+      final resolved = baseUri.resolve(href.trim());
+      final host = resolved.host.toLowerCase();
+      final isSocialProfile = host.contains('facebook.com') ||
+          host.contains('instagram.com') ||
+          host.contains('m.facebook.com') ||
+          host.contains('m.instagram.com');
+      if (!isSocialProfile) {
+        continue;
+      }
+
+      if (resolved.path.contains('/share') ||
+          resolved.path.contains('/sharer')) {
+        continue;
+      }
+
+      profileUris.add(
+        Uri(
+          scheme: 'https',
+          host: resolved.host,
+          path: resolved.path,
+          query: resolved.query,
+        ),
+      );
+    }
+    return profileUris;
+  }
+
+  static List<Uri> buildGuessedSocialProfileUris({
+    required String companyName,
+    required String companyWebsiteUrl,
+  }) {
+    final slugs = <String>{};
+    final fullSlug = companyName.slugify();
+    if (fullSlug.isNotEmpty) {
+      slugs.add(fullSlug);
+      slugs.add(fullSlug.replaceAll('-', ''));
+    }
+
+    final tokens = companyName.extractCompanyTokens();
+    if (tokens.isNotEmpty) {
+      slugs.add(tokens.join());
+      slugs.add(tokens.join('-'));
+    }
+
+    final domainToken = companyWebsiteUrl.extractDomainToken();
+    if (domainToken != null && domainToken.isNotEmpty) {
+      slugs.add(domainToken.slugify());
+    }
+
+    final cleanedSlugs = slugs
+        .map((slug) => slug.replaceAll(RegExp('-+'), '-'))
+        .where((slug) => slug.isNotEmpty)
+        .take(6)
+        .toList();
+
+    final uris = <Uri>[];
+    for (final slug in cleanedSlugs) {
+      uris.add(Uri.parse('https://www.facebook.com/$slug'));
+      uris.add(Uri.parse('https://m.facebook.com/$slug'));
+      uris.add(Uri.parse('https://www.instagram.com/$slug/'));
+    }
+    return uris;
   }
 
   static List<Uri> buildLogosWorldPageUris({
