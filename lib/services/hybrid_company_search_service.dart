@@ -163,7 +163,10 @@ class LocalCompanySearchService {
     final tokens = query
         .toLowerCase()
         .split(RegExp('[^a-z0-9]+'))
-        .where((token) => token.length >= 3)
+        .where(
+          (token) =>
+              token.length >= 3 || _meaningfulShortDomainTokens.contains(token),
+        )
         .where((token) => !_commonNoiseTokens.contains(token))
         .toList();
     if (tokens.isEmpty) {
@@ -185,14 +188,14 @@ class LocalCompanySearchService {
       candidates.add(normalized);
     }
 
-    addDomain('${primaryTokens.first}.com');
-
     if (primaryTokens.length >= 2) {
       final first = primaryTokens[0];
       final second = primaryTokens[1];
       addDomain('$first$second.com');
       addDomain('$first-$second.com');
     }
+
+    addDomain('${primaryTokens.first}.com');
 
     if (primaryTokens.length >= 3) {
       final combined = primaryTokens.take(3).join();
@@ -275,5 +278,11 @@ class LocalCompanySearchService {
     'bank',
     'services',
     'group',
+  };
+
+  static const Set<String> _meaningfulShortDomainTokens = {
+    'hq',
+    'ai',
+    'io',
   };
 }

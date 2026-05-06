@@ -151,7 +151,7 @@ class ImageLogoHelpers {
 
         final url = item.url;
         final bytes = item.bytes;
-        if (url.isLikelySocialAssetUrl()) continue;
+        if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) continue;
         if (bytes == null) continue;
 
         results.add(CompanyImageOption(url: url, bytes: bytes));
