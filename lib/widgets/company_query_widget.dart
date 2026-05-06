@@ -1,3 +1,4 @@
+import 'package:contact_photos/extensions/string_extensions.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/services/hybrid_company_search_service.dart';
 import 'package:flutter/material.dart';
@@ -8,7 +9,8 @@ typedef CompanySelectedCallback = void Function(CompanySearchResult company);
 
 class CompanyQueryWidget extends HookWidget {
   const CompanyQueryWidget({
-    required this.onCompanySelected, super.key,
+    required this.onCompanySelected,
+    super.key,
   });
 
   final CompanySelectedCallback onCompanySelected;
@@ -54,6 +56,129 @@ class CompanyQueryWidget extends HookWidget {
           ),
         ),
       );
+    }
+
+    String deriveCompanyNameFromWebsite(String websiteUrl) {
+      final uri = Uri.tryParse(websiteUrl);
+      if (uri == null || uri.host.isEmpty) {
+        return 'Manual Company';
+      }
+
+      final host = uri.host.toLowerCase();
+      final withoutWww = host.startsWith('www.') ? host.substring(4) : host;
+      final segment = withoutWww.split('.').first;
+      if (segment.isEmpty) {
+        return 'Manual Company';
+      }
+
+      final words = segment
+          .split(RegExp('[-_]+'))
+          .where((word) => word.trim().isNotEmpty)
+          .map(
+            (word) => '${word[0].toUpperCase()}${word.substring(1)}',
+          )
+          .toList();
+      if (words.isEmpty) {
+        return 'Manual Company';
+      }
+      return words.join(' ');
+    }
+
+    Future<void> openManualUrlSheet() async {
+      final urlController = TextEditingController();
+      String? sheetError;
+
+      final selected = await showModalBottomSheet<CompanySearchResult>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) {
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Enter Company URL',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    TextField(
+                      controller: urlController,
+                      keyboardType: TextInputType.url,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: 'Website URL',
+                        hintText: 'https://example.com',
+                        border: OutlineInputBorder(),
+                      ),
+                      onSubmitted: (_) {
+                        final normalized =
+                            urlController.text.trim().normalizeWebsiteUrl();
+                        if (normalized == null) {
+                          setSheetState(() {
+                            sheetError = 'Enter a valid website URL.';
+                          });
+                          return;
+                        }
+
+                        Navigator.of(sheetContext).pop(
+                          CompanySearchResult(
+                            name: deriveCompanyNameFromWebsite(normalized),
+                            websiteUrl: normalized,
+                          ),
+                        );
+                      },
+                    ),
+                    if (sheetError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        sheetError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: () {
+                        final normalized =
+                            urlController.text.trim().normalizeWebsiteUrl();
+                        if (normalized == null) {
+                          setSheetState(() {
+                            sheetError = 'Enter a valid website URL.';
+                          });
+                          return;
+                        }
+
+                        Navigator.of(sheetContext).pop(
+                          CompanySearchResult(
+                            name: deriveCompanyNameFromWebsite(normalized),
+                            websiteUrl: normalized,
+                          ),
+                        );
+                      },
+                      child: const Text('Use This URL'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+
+      if (selected != null) {
+        onCompanySelected(selected);
+      }
     }
 
     return Column(
@@ -125,6 +250,13 @@ class CompanyQueryWidget extends HookWidget {
             ),
           ),
         ],
+        if (hasSearched.value && !isLoading.value) ...[
+          FilledButton.tonalIcon(
+            onPressed: openManualUrlSheet,
+            icon: const Icon(Icons.link),
+            label: const Text('Enter Company URL Manually'),
+          ),
+        ],
       ],
     );
   }
@@ -132,7 +264,9 @@ class CompanyQueryWidget extends HookWidget {
 
 class CompanyWebsitePage extends HookWidget {
   const CompanyWebsitePage({
-    required this.title, required this.websiteUrl, super.key,
+    required this.title,
+    required this.websiteUrl,
+    super.key,
   });
 
   final String title;

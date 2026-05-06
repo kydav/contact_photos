@@ -1,7 +1,10 @@
+import 'dart:typed_data';
+
 import 'package:contact_photos/helpers/image_logo_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:image_picker/image_picker.dart';
 
 typedef CompanyImageSelectedCallback = void Function(CompanyImageOption image);
 
@@ -258,6 +261,116 @@ class CompanyImageQueryWidget extends HookWidget {
       }
     }
 
+    Future<void> openManualImageUploadSheet() async {
+      await showModalBottomSheet<void>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) {
+          var isPicking = false;
+          String? localSheetError;
+
+          Future<void> pickImage(StateSetter setSheetState) async {
+            if (isPicking) {
+              return;
+            }
+
+            setSheetState(() {
+              isPicking = true;
+              localSheetError = null;
+            });
+
+            try {
+              final picker = ImagePicker();
+              final file = await picker.pickImage(
+                source: ImageSource.gallery,
+                imageQuality: 100,
+              );
+              if (file == null) {
+                setSheetState(() {
+                  isPicking = false;
+                });
+                return;
+              }
+
+              final bytes = await file.readAsBytes();
+              if (bytes.isEmpty) {
+                setSheetState(() {
+                  isPicking = false;
+                  localSheetError =
+                      'Could not read image bytes. Try another image.';
+                });
+                return;
+              }
+
+              if (!sheetContext.mounted) {
+                return;
+              }
+              Navigator.of(sheetContext).pop();
+
+              onImageSelected(
+                CompanyImageOption(
+                  url:
+                      'manual-upload://${DateTime.now().millisecondsSinceEpoch}',
+                  bytes: Uint8List.fromList(bytes),
+                ),
+              );
+            } catch (error) {
+              setSheetState(() {
+                isPicking = false;
+                localSheetError = 'Could not pick image: $error';
+              });
+            }
+          }
+
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Upload Your Own Image',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Choose an image from your device to use for this contact.',
+                    ),
+                    const SizedBox(height: 12),
+                    FilledButton.icon(
+                      onPressed:
+                          isPicking ? null : () => pickImage(setSheetState),
+                      icon: const Icon(Icons.photo_library_outlined),
+                      label: Text(
+                        isPicking ? 'Picking image...' : 'Choose Image',
+                      ),
+                    ),
+                    if (localSheetError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        localSheetError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+    }
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -361,6 +474,14 @@ class CompanyImageQueryWidget extends HookWidget {
                   },
                 ),
         ),
+        if (hasSearchedWebsite.value && !isLoading.value) ...[
+          const SizedBox(height: 8),
+          FilledButton.tonalIcon(
+            onPressed: openManualImageUploadSheet,
+            icon: const Icon(Icons.upload_file),
+            label: const Text('Upload Your Own Image'),
+          ),
+        ],
       ],
     );
   }
