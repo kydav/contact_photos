@@ -25,13 +25,16 @@ class ContactsService {
     required String companyName,
     required String phoneNumber,
     Uint8List? photoBytes,
+    bool photoAlreadyAdjusted = false,
   }) async {
     final granted = await FlutterContacts.requestPermission();
     if (!granted) {
       throw Exception('Contacts permission was not granted.');
     }
 
-    final optimizedPhotoBytes = _optimizePhotoForContactBubble(photoBytes);
+    final optimizedPhotoBytes = photoAlreadyAdjusted
+        ? photoBytes
+        : _optimizePhotoForContactBubble(photoBytes);
 
     final contact = Contact(
       name: Name(first: companyName),
