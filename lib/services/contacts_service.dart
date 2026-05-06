@@ -56,7 +56,7 @@ class ContactsService {
     }
 
     const targetSize = 512;
-    const logoInset = 56;
+    const logoInset = 0;
     final maxDimension =
         decoded.width > decoded.height ? decoded.width : decoded.height;
     if (maxDimension == 0) {

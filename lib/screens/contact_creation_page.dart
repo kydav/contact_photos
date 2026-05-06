@@ -70,8 +70,80 @@ class ContactCreationPage extends HookWidget {
     final isSaving = useState(false);
     final isCropping = useState(false);
     final localError = useState<String?>(null);
+    final contactName = useState(company.name);
     final currentPhotoBytes = useState<Uint8List>(imageOption.bytes);
     final wasCropped = useState(false);
+
+    Future<void> editContactName() async {
+      final nameController = TextEditingController(text: contactName.value);
+      String? sheetError;
+
+      final updatedName = await showModalBottomSheet<String>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) {
+          return StatefulBuilder(
+            builder: (context, setSheetState) {
+              return Padding(
+                padding: EdgeInsets.only(
+                  left: 16,
+                  right: 16,
+                  top: 16,
+                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    const Text(
+                      'Edit Contact Name',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
+                    ),
+                    const SizedBox(height: 10),
+                    TextField(
+                      controller: nameController,
+                      textInputAction: TextInputAction.done,
+                      decoration: const InputDecoration(
+                        labelText: 'Contact name',
+                        border: OutlineInputBorder(),
+                      ),
+                    ),
+                    if (sheetError != null) ...[
+                      const SizedBox(height: 8),
+                      Text(
+                        sheetError!,
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.error,
+                        ),
+                      ),
+                    ],
+                    const SizedBox(height: 12),
+                    FilledButton(
+                      onPressed: () {
+                        final value = nameController.text.trim();
+                        if (value.isEmpty) {
+                          setSheetState(() {
+                            sheetError = 'Name cannot be empty.';
+                          });
+                          return;
+                        }
+                        Navigator.of(sheetContext).pop(value);
+                      },
+                      child: const Text('Save Name'),
+                    ),
+                  ],
+                ),
+              );
+            },
+          );
+        },
+      );
+
+      if (updatedName != null && updatedName.isNotEmpty) {
+        contactName.value = updatedName;
+      }
+    }
 
     Future<void> cropImage() async {
       if (isCropping.value) {
@@ -108,14 +180,14 @@ class ContactCreationPage extends HookWidget {
 
       try {
         await ContactsService.createContact(
-          companyName: company.name,
+          companyName: contactName.value,
           phoneNumber: phoneNumber,
           photoBytes: currentPhotoBytes.value,
           photoAlreadyAdjusted: wasCropped.value,
         );
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Created contact for ${company.name}.')),
+          SnackBar(content: Text('Created contact for ${contactName.value}.')),
         );
         onContactCreated();
       } catch (error) {
@@ -138,7 +210,16 @@ class ContactCreationPage extends HookWidget {
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
         const SizedBox(height: 8),
-        Text('Company: ${company.name}'),
+        Row(
+          children: [
+            Expanded(child: Text('Company: ${contactName.value}')),
+            IconButton(
+              onPressed: isSaving.value ? null : editContactName,
+              icon: const Icon(Icons.edit),
+              tooltip: 'Edit name',
+            ),
+          ],
+        ),
         const SizedBox(height: 8),
         const Text(
           'Adjust Contact Bubble Image',
