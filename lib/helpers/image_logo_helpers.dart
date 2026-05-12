@@ -1,23 +1,68 @@
-import 'dart:core';
+import 'dart:async';
+import 'dart:developer' as developer;
+import 'dart:typed_data';
 
+import 'package:contact_photos/extensions/byte_extensions.dart';
 import 'package:contact_photos/extensions/http_extensions.dart';
 import 'package:contact_photos/extensions/string_extensions.dart';
 import 'package:contact_photos/extensions/uri_extensions.dart';
 import 'package:contact_photos/models/company_image_option.dart';
+import 'package:http/http.dart' as http;
 
 class ImageLogoHelpers {
+  static const bool _enablePerIndexLogging = true;
+
+  static const Duration _candidateDownloadTimeout = Duration(seconds: 10);
+  static const Duration _candidateProcessingTimeout = Duration(seconds: 3);
+  static const Duration _candidateAttemptTimeout = Duration(seconds: 15);
+  static const Duration _overallValidationTimeout = Duration(seconds: 75);
+  static const Duration _downloadStreamStallTimeout = Duration(seconds: 3);
+  static const int _maxDownloadedBytes = 8 * 1024 * 1024;
+
+  static bool _allowsMetaWildcardCdnUrls(String companyName) {
+    final lower = companyName.toLowerCase();
+    return lower.contains('facebook') ||
+        lower.contains('instagram') ||
+        lower.contains('meta');
+  }
+
+  static bool _allowsSocialAssetUrlsForCompany(String companyName) {
+    final lower = companyName.toLowerCase();
+    return lower == 'x' ||
+        lower.contains(' x ') ||
+        lower.startsWith('x ') ||
+        lower.endsWith(' x') ||
+        lower.contains('twitter') ||
+        lower.contains('facebook') ||
+        lower.contains('instagram') ||
+        lower.contains('meta');
+  }
+
+  static bool _isMetaWildcardCdnUrl(String url) {
+    final lower = url.toLowerCase();
+    return lower.contains('fbcdn') || lower.contains('cdninstagram');
+  }
+
+  static List<String> _removeDisallowedMetaWildcardCdnUrls(
+    Iterable<String> urls, {
+    required bool allowMetaWildcardCdnUrls,
+  }) {
+    if (allowMetaWildcardCdnUrls) {
+      return urls.toList();
+    }
+    return urls.where((url) => !_isMetaWildcardCdnUrl(url)).toList();
+  }
+
   static List<String> rankImageCandidates(
-    List<String> urls,
-    String primaryHost,
-    List<String> companyTokens,
-  ) {
+      List<String> urls, String primaryHost, List<String> companyTokens,
+      {bool allowSocialAssetUrls = false}) {
     int score(String url) {
       final lower = url.toLowerCase();
       final uri = Uri.tryParse(url);
       final host = uri?.host.toLowerCase() ?? '';
       var value = 0;
 
-      if (url.isLikelySocialAssetUrl()) {
+      if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) {
         value -= 24;
       }
       if (host == primaryHost || host == 'www.$primaryHost') {
@@ -25,7 +70,10 @@ class ImageLogoHelpers {
       }
       if (lower.contains('logo')) value += 4;
       if (lower.contains('brand')) value += 2;
-      if (lower.contains('icon') || lower.contains('favicon')) value += 2;
+      if (lower.contains('favicon')) value += 6;
+      if (lower.contains('apple-touch-icon')) value += 5;
+      if (lower.contains('android-chrome')) value += 4;
+      if (lower.contains('icon')) value += 2;
       if (url.isLikelyUiIconUrl()) value -= 8;
       if (lower.contains('sprite') ||
           lower.contains('placeholder') ||
@@ -52,16 +100,17 @@ class ImageLogoHelpers {
     Uri baseUri, {
     List<String> companyTokens = const [],
     bool allowSocialAssetUrls = false,
+    bool allowMetaWildcardCdnUrls = false,
   }) {
     final urls = <String>{};
 
     void addCandidate(String? rawValue) {
       if (rawValue == null || rawValue.trim().isEmpty) return;
 
-      final cleaned =
-          rawValue.replaceAll('&amp;', '&').trim().trimTrailingUrlPunctuation(
-                removeDot: true,
-              );
+      final cleaned = rawValue
+          .replaceAll('&amp;', '&')
+          .trim()
+          .trimTrailingUrlPunctuation(removeDot: true);
       if (cleaned.isEmpty || cleaned.startsWith('data:')) return;
 
       final absolute = baseUri.resolve(cleaned).toString();
@@ -69,6 +118,7 @@ class ImageLogoHelpers {
       if (uri == null || uri.host.isEmpty) return;
       if (uri.scheme != 'http' && uri.scheme != 'https') return;
       if (absolute.isLikelySvgUrl()) return;
+      if (!allowMetaWildcardCdnUrls && _isMetaWildcardCdnUrl(absolute)) return;
       if (!allowSocialAssetUrls && absolute.isLikelySocialAssetUrl()) return;
 
       urls.add(uri.toString());
@@ -122,42 +172,57 @@ class ImageLogoHelpers {
     List<String> urls, {
     void Function(int completed, int total)? onProgress,
     bool allowSocialAssetUrls = false,
+    bool excludePlatformBrandLogos = true,
   }) async {
     final candidateUrls = urls.take(16).toList();
     final results = <CompanyImageOption>[];
     final total = candidateUrls.length;
     var completed = 0;
     onProgress?.call(0, total);
+    final stopwatch = Stopwatch()..start();
 
-    const chunkSize = 4;
-    for (var start = 0; start < candidateUrls.length; start += chunkSize) {
+    for (var index = 0; index < candidateUrls.length; index++) {
+      final url = candidateUrls[index];
       if (results.length >= 8) {
         break;
       }
+      if (stopwatch.elapsed >= _overallValidationTimeout) {
+        break;
+      }
 
-      final end = (start + chunkSize < candidateUrls.length)
-          ? start + chunkSize
-          : candidateUrls.length;
-      final chunk = candidateUrls.sublist(start, end);
+      final attemptStopwatch = Stopwatch()..start();
+      _logCandidate(
+        index: index,
+        total: total,
+        phase: 'start',
+        url: url,
+      );
 
-      final futures = chunk
-          .map((url) async => (url: url, bytes: await url.downloadImageBytes()))
-          .toList();
-      final resolved = await Future.wait(futures);
+      final attempt = await _buildCandidateOption(
+        url,
+        allowSocialAssetUrls: allowSocialAssetUrls,
+      ).timeout(
+        _candidateAttemptTimeout,
+        onTimeout: () => (
+          option: null,
+          reason: 'candidate-timeout',
+        ),
+      );
 
-      for (final item in resolved) {
-        completed += 1;
-        onProgress?.call(completed, total);
+      completed += 1;
+      onProgress?.call(completed, total);
 
-        final url = item.url;
-        final bytes = item.bytes;
-        if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) continue;
-        if (bytes == null) continue;
+      _logCandidate(
+        index: index,
+        total: total,
+        phase: 'complete',
+        url: url,
+        reason: attempt.reason,
+        elapsedMs: attemptStopwatch.elapsedMilliseconds,
+      );
 
-        results.add(CompanyImageOption(url: url, bytes: bytes));
-        if (results.length >= 8) {
-          break;
-        }
+      if (attempt.option != null) {
+        results.add(attempt.option!);
       }
     }
 
@@ -165,6 +230,169 @@ class ImageLogoHelpers {
       onProgress?.call(0, 0);
     }
     return results;
+  }
+
+  static Future<Uint8List?> _downloadDirectImageBytes(String url) async {
+    final client = http.Client();
+    try {
+      final uri = Uri.tryParse(url);
+      if (uri == null || uri.host.isEmpty) {
+        return null;
+      }
+      if (uri.scheme != 'http' && uri.scheme != 'https') {
+        return null;
+      }
+
+      final request = http.Request('GET', uri)
+        ..headers.addAll(const {
+          'User-Agent':
+              'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile',
+          'Accept': 'image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+        });
+
+      final response = await client.send(request).timeout(
+            const Duration(seconds: 6),
+          );
+
+      if (response.statusCode != 200) {
+        return null;
+      }
+
+      final bytesBuilder = BytesBuilder(copy: false);
+      var totalBytes = 0;
+      await for (final chunk in response.stream.timeout(
+        _downloadStreamStallTimeout,
+      )) {
+        totalBytes += chunk.length;
+        if (totalBytes > _maxDownloadedBytes) {
+          return null;
+        }
+        bytesBuilder.add(chunk);
+      }
+
+      final bytes = bytesBuilder.takeBytes();
+      if (bytes.isEmpty) {
+        return null;
+      }
+
+      final contentType = response.headers['content-type']?.toLowerCase() ?? '';
+      final looksLikeImage =
+          (contentType.startsWith('image/') && !contentType.contains('svg')) ||
+              bytes.looksLikeImageBytes();
+
+      if (!looksLikeImage) {
+        return null;
+      }
+      return bytes;
+    } on TimeoutException {
+      return null;
+    } catch (_) {
+      return null;
+    } finally {
+      client.close();
+    }
+  }
+
+  static Future<bool> _shouldAcceptCandidate(
+    String url,
+    Uint8List? bytes, {
+    required bool allowSocialAssetUrls,
+    bool allowMetaWildcardCdnUrls = true,
+  }) async {
+    if (!allowMetaWildcardCdnUrls && _isMetaWildcardCdnUrl(url)) {
+      return false;
+    }
+    if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) {
+      return false;
+    }
+    if (bytes == null) {
+      return false;
+    }
+
+    return true;
+  }
+
+  static Future<({CompanyImageOption? option, String reason})>
+      _buildCandidateOption(
+    String url, {
+    required bool allowSocialAssetUrls,
+    bool allowMetaWildcardCdnUrls = true,
+  }) async {
+    var downloadTimedOut = false;
+    final bytes = await _downloadDirectImageBytes(url).timeout(
+      _candidateDownloadTimeout,
+      onTimeout: () {
+        downloadTimedOut = true;
+        return null;
+      },
+    );
+    if (downloadTimedOut) {
+      return (option: null, reason: 'download-timeout');
+    }
+    if (bytes == null) {
+      return (option: null, reason: 'download-null');
+    }
+
+    var processingTimedOut = false;
+    final shouldAdd = await _shouldAcceptCandidate(
+      url,
+      bytes,
+      allowSocialAssetUrls: allowSocialAssetUrls,
+      allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
+    ).timeout(
+      _candidateProcessingTimeout,
+      onTimeout: () {
+        processingTimedOut = true;
+        return false;
+      },
+    );
+    if (processingTimedOut) {
+      return (option: null, reason: 'processing-timeout');
+    }
+
+    if (!shouldAdd) {
+      return (option: null, reason: 'filtered');
+    }
+    return (
+      option: CompanyImageOption(url: url, bytes: bytes),
+      reason: 'accepted',
+    );
+  }
+
+  static void _logCandidate({
+    required int index,
+    required int total,
+    required String phase,
+    required String url,
+    String? reason,
+    int? elapsedMs,
+  }) {
+    if (!_enablePerIndexLogging) {
+      return;
+    }
+
+    final reasonText = reason == null ? '' : ', reason=$reason';
+    final elapsedText = elapsedMs == null ? '' : ', elapsed=${elapsedMs}ms';
+    developer.log(
+      '[image-check ${index + 1}/$total] $phase$reasonText$elapsedText, url=$url',
+      name: 'ImageLogoHelpers',
+    );
+  }
+
+  static void _logLogoUrls({
+    required String source,
+    required List<String> urls,
+  }) {
+    if (!_enablePerIndexLogging) {
+      return;
+    }
+
+    for (var index = 0; index < urls.length; index++) {
+      developer.log(
+        '[logo-url ${index + 1}/${urls.length}] source=$source, url=${urls[index]}',
+        name: 'ImageLogoHelpers',
+      );
+    }
   }
 
   static List<CompanyImageOption> mergeImageOptions(
@@ -197,6 +425,8 @@ class ImageLogoHelpers {
 
     final websiteUris = baseUri.buildWebsiteCandidates();
     final companyTokens = companyName.extractCompanyTokens();
+    final allowSocialAssetUrls = _allowsSocialAssetUrlsForCompany(companyName);
+    final allowMetaWildcardCdnUrls = _allowsMetaWildcardCdnUrls(companyName);
     final discoveredUrls = <String>{};
 
     final primaryHost = websiteUris.first.host.toLowerCase();
@@ -226,18 +456,29 @@ class ImageLogoHelpers {
             response.body,
             websiteUri,
             companyTokens: companyTokens,
+            allowSocialAssetUrls: allowSocialAssetUrls,
+            allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
           ),
         );
       }
     }
+    var filteredUrls = discoveredUrls.toList();
+    if (!allowSocialAssetUrls) {
+      filteredUrls = ImageLogoHelpers._removeDisallowedMetaWildcardCdnUrls(
+        discoveredUrls,
+        allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
+      );
+    }
 
     final rankedUrls = ImageLogoHelpers.rankImageCandidates(
-      discoveredUrls.toList(),
+      filteredUrls,
       primaryHost,
       companyTokens,
+      allowSocialAssetUrls: allowSocialAssetUrls,
     );
-
-    return rankedUrls.take(24).toList();
+    final result = rankedUrls.take(24).toList();
+    _logLogoUrls(source: 'website', urls: result);
+    return result;
   }
 
   static Future<List<String>> queryImageUrlsFromLogosWorld({
@@ -253,6 +494,8 @@ class ImageLogoHelpers {
     }
 
     final companyTokens = companyName.extractCompanyTokens();
+    final allowSocialAssetUrls = _allowsSocialAssetUrlsForCompany(companyName);
+    final allowMetaWildcardCdnUrls = _allowsMetaWildcardCdnUrls(companyName);
     final discoveredUrls = <String>{};
 
     final responses =
@@ -277,17 +520,27 @@ class ImageLogoHelpers {
             response.body,
             pageUri,
             companyTokens: companyTokens,
+            allowSocialAssetUrls: allowSocialAssetUrls,
+            allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
           ),
         );
       }
     }
 
+    final filteredUrls = ImageLogoHelpers._removeDisallowedMetaWildcardCdnUrls(
+      discoveredUrls,
+      allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
+    );
+
     final ranked = ImageLogoHelpers.rankImageCandidates(
-      discoveredUrls.toList(),
+      filteredUrls,
       'logos-world.net',
       companyTokens,
+      allowSocialAssetUrls: allowSocialAssetUrls,
     );
-    return ranked.take(12).toList();
+    final result = ranked.take(12).toList();
+    _logLogoUrls(source: 'logos-world', urls: result);
+    return result;
   }
 
   static Future<List<String>> queryImageUrlsFromSocialProfiles({
@@ -300,6 +553,7 @@ class ImageLogoHelpers {
     }
 
     final companyTokens = companyName.extractCompanyTokens();
+    final allowMetaWildcardCdnUrls = _allowsMetaWildcardCdnUrls(companyName);
     final profileUris = <Uri>{};
 
     final websiteCandidates = websiteUri.buildWebsiteCandidates();
@@ -353,17 +607,26 @@ class ImageLogoHelpers {
             profileUri,
             companyTokens: companyTokens,
             allowSocialAssetUrls: true,
+            allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
           ),
         );
       }
     }
 
+    final filteredUrls = ImageLogoHelpers._removeDisallowedMetaWildcardCdnUrls(
+      discoveredUrls,
+      allowMetaWildcardCdnUrls: allowMetaWildcardCdnUrls,
+    );
+
     final ranked = ImageLogoHelpers.rankImageCandidates(
-      discoveredUrls.toList(),
+      filteredUrls,
       websiteUri.host,
       companyTokens,
+      allowSocialAssetUrls: true,
     );
-    return ranked.take(12).toList();
+    final result = ranked.take(12).toList();
+    _logLogoUrls(source: 'social', urls: result);
+    return result;
   }
 
   static Set<Uri> _extractSocialProfileUrisFromHtml(String html, Uri baseUri) {

@@ -3,6 +3,26 @@ import 'package:contact_photos/models/company_image_option.dart';
 import 'package:flutter/material.dart';
 
 class SearchHelpers {
+  bool _shouldExcludePlatformLogos(String companyName) {
+    final lower = companyName.toLowerCase();
+
+    if (lower == 'x' ||
+        lower.contains(' x ') ||
+        lower.startsWith('x ') ||
+        lower.endsWith(' x') ||
+        lower.contains('twitter')) {
+      return false;
+    }
+
+    if (lower.contains('facebook') ||
+        lower.contains('instagram') ||
+        lower.contains('meta')) {
+      return false;
+    }
+
+    return true;
+  }
+
   Future<void> searchWebsiteImages(
       String? companyName,
       String? companyWebsiteUrl,
@@ -30,6 +50,9 @@ class SearchHelpers {
     progressLabel.value = 'Collecting image candidates from website...';
 
     try {
+      final excludePlatformLogos = _shouldExcludePlatformLogos(companyName);
+      final allowSocialAssetUrls = !excludePlatformLogos;
+
       final primaryUrls = await ImageLogoHelpers.queryImageUrlsFromWebsite(
         companyName: companyName,
         websiteUrl: companyWebsiteUrl,
@@ -39,6 +62,8 @@ class SearchHelpers {
           'Validating ${primaryUrls.length} candidate images...';
       imageOptions.value = await ImageLogoHelpers.loadRenderableImageOptions(
         primaryUrls,
+        allowSocialAssetUrls: allowSocialAssetUrls,
+        excludePlatformBrandLogos: excludePlatformLogos,
         onProgress: (completed, total) {
           if (total <= 0) {
             progressValue.value = null;
@@ -67,6 +92,8 @@ class SearchHelpers {
           final logosWorldOptions =
               await ImageLogoHelpers.loadRenderableImageOptions(
             logosWorldUrls,
+            allowSocialAssetUrls: allowSocialAssetUrls,
+            excludePlatformBrandLogos: excludePlatformLogos,
             onProgress: (completed, total) {
               if (total <= 0) return;
               progressValue.value = completed / total;
@@ -97,11 +124,12 @@ class SearchHelpers {
               await ImageLogoHelpers.loadRenderableImageOptions(
             socialUrls,
             allowSocialAssetUrls: true,
+            excludePlatformBrandLogos: excludePlatformLogos,
             onProgress: (completed, total) {
               if (total <= 0) return;
               progressValue.value = completed / total;
               progressLabel.value =
-                  'Auto fallback: checking more image $completed of $total...';
+                  'Auto fallback: checking image $completed of $total...';
             },
           );
           imageOptions.value = ImageLogoHelpers.mergeImageOptions(
@@ -146,6 +174,9 @@ class SearchHelpers {
     progressLabel.value = 'Collecting fallback candidates...';
 
     try {
+      final excludePlatformLogos = _shouldExcludePlatformLogos(companyName);
+      final allowSocialAssetUrls = !excludePlatformLogos;
+
       final logosWorldUrls =
           await ImageLogoHelpers.queryImageUrlsFromLogosWorld(
         companyName: companyName,
@@ -161,6 +192,8 @@ class SearchHelpers {
       final additionalOptions =
           await ImageLogoHelpers.loadRenderableImageOptions(
         logosWorldUrls,
+        allowSocialAssetUrls: allowSocialAssetUrls,
+        excludePlatformBrandLogos: excludePlatformLogos,
         onProgress: (completed, total) {
           if (total <= 0) return;
           progressValue.value = completed / total;
@@ -210,6 +243,8 @@ class SearchHelpers {
     progressLabel.value = 'Collecting deeper fallback candidates...';
 
     try {
+      final excludePlatformLogos = _shouldExcludePlatformLogos(companyName);
+
       final socialUrls =
           await ImageLogoHelpers.queryImageUrlsFromSocialProfiles(
         companyName: companyName,
@@ -225,6 +260,7 @@ class SearchHelpers {
       final socialOptions = await ImageLogoHelpers.loadRenderableImageOptions(
         socialUrls,
         allowSocialAssetUrls: true,
+        excludePlatformBrandLogos: excludePlatformLogos,
         onProgress: (completed, total) {
           if (total <= 0) return;
           progressValue.value = completed / total;

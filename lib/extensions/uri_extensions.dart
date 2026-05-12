@@ -22,6 +22,9 @@ extension UriExtensions on Uri {
   List<String> buildCommonImageAssetUrls() {
     final urls = <String>{
       Uri(scheme: 'https', host: host, path: '/favicon.ico').toString(),
+      Uri(scheme: 'https', host: host, path: '/favicon.png').toString(),
+      Uri(scheme: 'https', host: host, path: '/favicon-32x32.png').toString(),
+      Uri(scheme: 'https', host: host, path: '/favicon-192x192.png').toString(),
       Uri(
         scheme: 'https',
         host: host,
@@ -31,6 +34,11 @@ extension UriExtensions on Uri {
         scheme: 'https',
         host: host,
         path: '/apple-touch-icon-precomposed.png',
+      ).toString(),
+      Uri(
+        scheme: 'https',
+        host: host,
+        path: '/android-chrome-192x192.png',
       ).toString(),
       Uri(scheme: 'https', host: host, path: '/logo.png').toString(),
       Uri(scheme: 'https', host: host, path: '/images/logo.png').toString(),
