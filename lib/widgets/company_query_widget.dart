@@ -189,20 +189,22 @@ class CompanyQueryWidget extends HookWidget {
           'Search Companies',
           style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
         ),
-        TextField(
-          controller: queryController,
-          textInputAction: TextInputAction.search,
-          onSubmitted: (_) => searchCompanies(),
-          decoration: const InputDecoration(
-            labelText: 'Company name',
-            border: OutlineInputBorder(),
+        Row(children: [
+          Expanded(
+            child: TextField(
+              controller: queryController,
+              textInputAction: TextInputAction.search,
+              onSubmitted: (_) => searchCompanies(),
+              decoration: const InputDecoration(
+                labelText: 'Company name',
+                border: OutlineInputBorder(),
+              ),
+            ),
           ),
-        ),
-        FilledButton.icon(
-          onPressed: isLoading.value ? null : searchCompanies,
-          icon: const Icon(Icons.search),
-          label: const Text('Search'),
-        ),
+          IconButton.filled(
+              onPressed: isLoading.value ? null : searchCompanies,
+              icon: const Icon(Icons.search))
+        ]),
         if (isLoading.value) ...[
           const LinearProgressIndicator(),
         ],

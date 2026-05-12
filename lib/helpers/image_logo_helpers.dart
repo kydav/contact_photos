@@ -199,6 +199,14 @@ class ImageLogoHelpers {
     final companyTokens = companyName.extractCompanyTokens();
     final discoveredUrls = <String>{};
 
+    final primaryHost = websiteUris.first.host.toLowerCase();
+    final domainForLogoApi =
+        primaryHost.startsWith('www.') ? primaryHost.substring(4) : primaryHost;
+    discoveredUrls.add(
+      Uri.parse('https://logos-api.apistemic.com/domain:$domainForLogoApi')
+          .toString(),
+    );
+
     for (final websiteUri in websiteUris) {
       discoveredUrls.addAll(websiteUri.buildCommonImageAssetUrls());
 
@@ -225,7 +233,7 @@ class ImageLogoHelpers {
 
     final rankedUrls = ImageLogoHelpers.rankImageCandidates(
       discoveredUrls.toList(),
-      websiteUris.first.host,
+      primaryHost,
       companyTokens,
     );
 

@@ -19,6 +19,7 @@ class HomePage extends HookWidget {
     final controller = usePageController();
     final showLeading = useState(false);
     final resetSeed = useState(0);
+    final imageStepSeed = useState(0);
     final imageOptions = useState<List<CompanyImageOption>>([]);
 
     useEffect(() {
@@ -74,12 +75,16 @@ class HomePage extends HookWidget {
                 onCompanySelected: (company) {
                   selectedCompany.value = company;
                   selectedImage.value = null;
+                  imageOptions.value = [];
+                  imageStepSeed.value = imageStepSeed.value + 1;
                   unawaited(goToPage(1));
                 },
               ),
             ),
             KeyedSubtree(
-              key: ValueKey<String>('images-${resetSeed.value}'),
+              key: ValueKey<String>(
+                'images-${resetSeed.value}-${imageStepSeed.value}',
+              ),
               child: CompanyImageQueryWidget(
                 companyName: selectedCompany.value?.name,
                 companyWebsiteUrl: selectedCompany.value?.websiteUrl,
