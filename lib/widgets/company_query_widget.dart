@@ -59,29 +59,7 @@ class CompanyQueryWidget extends HookWidget {
     }
 
     String deriveCompanyNameFromWebsite(String websiteUrl) {
-      final uri = Uri.tryParse(websiteUrl);
-      if (uri == null || uri.host.isEmpty) {
-        return 'Manual Company';
-      }
-
-      final host = uri.host.toLowerCase();
-      final withoutWww = host.startsWith('www.') ? host.substring(4) : host;
-      final segment = withoutWww.split('.').first;
-      if (segment.isEmpty) {
-        return 'Manual Company';
-      }
-
-      final words = segment
-          .split(RegExp('[-_]+'))
-          .where((word) => word.trim().isNotEmpty)
-          .map(
-            (word) => '${word[0].toUpperCase()}${word.substring(1)}',
-          )
-          .toList();
-      if (words.isEmpty) {
-        return 'Manual Company';
-      }
-      return words.join(' ');
+      return websiteUrl.inferCompanyNameFromWebsite(fallback: 'Manual Company');
     }
 
     Future<void> openManualUrlSheet() async {
@@ -201,6 +179,9 @@ class CompanyQueryWidget extends HookWidget {
               ),
             ),
           ),
+          const SizedBox(
+            width: 5,
+          ),
           IconButton.filled(
               onPressed: isLoading.value ? null : searchCompanies,
               icon: const Icon(Icons.search))
@@ -232,7 +213,66 @@ class CompanyQueryWidget extends HookWidget {
                   final company = companies.value[index];
                   return Card(
                     child: ListTile(
-                      title: Text(company.name),
+                      title: Row(
+                        children: [
+                          Text(company.name),
+                          IconButton(
+                              onPressed: () {
+                                final editController =
+                                    TextEditingController(text: company.name);
+                                final urlController = TextEditingController(
+                                    text: company.websiteUrl);
+                                showDialog(
+                                  context: context,
+                                  builder: (context) {
+                                    return AlertDialog(
+                                      title: const Text('Edit Company Name'),
+                                      content: Column(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          TextField(
+                                            controller: editController,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Company Name',
+                                            ),
+                                          ),
+                                          TextField(
+                                            controller: urlController,
+                                            decoration: const InputDecoration(
+                                              labelText: 'Website URL',
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                                      actions: [
+                                        TextButton(
+                                          onPressed: () =>
+                                              Navigator.of(context).pop(),
+                                          child: const Text('Cancel'),
+                                        ),
+                                        ElevatedButton(
+                                          onPressed: () {
+                                            final newName =
+                                                editController.text.trim();
+                                            if (newName.isNotEmpty) {
+                                              companies.value[index] =
+                                                  CompanySearchResult(
+                                                name: newName,
+                                                websiteUrl: company.websiteUrl,
+                                              );
+                                            }
+                                            Navigator.of(context).pop();
+                                          },
+                                          child: const Text('Save'),
+                                        ),
+                                      ],
+                                    );
+                                  },
+                                );
+                              },
+                              icon: const Icon(Icons.edit)),
+                        ],
+                      ),
                       subtitle: TextButton(
                         onPressed: () => openWebsite(company),
                         style: TextButton.styleFrom(

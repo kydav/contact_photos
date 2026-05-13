@@ -86,7 +86,22 @@ class ContactCreationPage extends HookWidget {
     return Uint8List.fromList(img.encodeJpg(canvas, quality: 92));
   }
 
-  static Uint8List _prepareSourceBytesForCropper(Uint8List sourceBytes) {
+  static Uint8List _encodeCropperImage(
+    img.Image image, {
+    required bool preserveTransparency,
+    int jpgQuality = 95,
+  }) {
+    return Uint8List.fromList(
+      preserveTransparency
+          ? img.encodePng(image)
+          : img.encodeJpg(image, quality: jpgQuality),
+    );
+  }
+
+  static Uint8List _prepareSourceBytesForCropper(
+    Uint8List sourceBytes, {
+    required bool preserveTransparency,
+  }) {
     final decoded = img.decodeImage(sourceBytes);
     if (decoded == null || decoded.width == 0 || decoded.height == 0) {
       return sourceBytes;
@@ -103,13 +118,21 @@ class ContactCreationPage extends HookWidget {
     final canvasSize = (maxDim * 1.28).round();
 
     final canvas = img.Image(width: canvasSize, height: canvasSize);
-    img.fill(canvas, color: img.ColorRgb8(255, 255, 255));
+    img.fill(
+      canvas,
+      color: preserveTransparency
+          ? img.ColorRgba8(0, 0, 0, 0)
+          : img.ColorRgb8(255, 255, 255),
+    );
 
     final offsetX = (canvas.width - decoded.width) ~/ 2;
     final offsetY = (canvas.height - decoded.height) ~/ 2;
     img.compositeImage(canvas, decoded, dstX: offsetX, dstY: offsetY);
 
-    return Uint8List.fromList(img.encodeJpg(canvas, quality: 95));
+    return _encodeCropperImage(
+      canvas,
+      preserveTransparency: preserveTransparency,
+    );
   }
 
   static Future<Uint8List?> _cropWithImageCropper(Uint8List sourceBytes) async {
@@ -120,16 +143,24 @@ class ContactCreationPage extends HookWidget {
       return null;
     }
 
-    final preparedBytes = _prepareSourceBytesForCropper(sourceBytes);
+    final preserveTransparency = _hasTransparency(sourceBytes);
+    final preparedBytes = _prepareSourceBytesForCropper(
+      sourceBytes,
+      preserveTransparency: preserveTransparency,
+    );
+    final fileExtension = preserveTransparency ? 'png' : 'jpg';
 
     final inputFile = File(
-      '${Directory.systemTemp.path}/contact_photo_${DateTime.now().millisecondsSinceEpoch}.jpg',
+      '${Directory.systemTemp.path}/contact_photo_${DateTime.now().millisecondsSinceEpoch}.$fileExtension',
     );
     await inputFile.writeAsBytes(preparedBytes, flush: true);
 
     final croppedFile = await ImageCropper().cropImage(
       sourcePath: inputFile.path,
-      compressQuality: 92,
+      compressQuality: preserveTransparency ? 100 : 92,
+      compressFormat: preserveTransparency
+          ? ImageCompressFormat.png
+          : ImageCompressFormat.jpg,
       maxWidth: 512,
       maxHeight: 512,
       aspectRatio: const CropAspectRatio(ratioX: 1, ratioY: 1),

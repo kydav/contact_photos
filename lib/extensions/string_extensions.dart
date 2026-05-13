@@ -315,6 +315,18 @@ extension StringExtensions on String {
     return results.toList();
   }
 
+  static const Set<String> _displayNameCompactSuffixes = {
+    'bank',
+    'care',
+    'cookies',
+    'foods',
+    'group',
+    'health',
+    'labs',
+    'services',
+    'systems',
+  };
+
   String? extractDomainToken() {
     final uri = normalizeWebsiteUri();
     if (uri == null || uri.host.isEmpty) {
@@ -324,6 +336,45 @@ extension StringExtensions on String {
     final withoutWww = host.startsWith('www.') ? host.substring(4) : host;
     final token = withoutWww.split('.').first;
     return token.isEmpty ? null : token;
+  }
+
+  String inferCompanyNameFromWebsite({String fallback = 'Unknown Company'}) {
+    final segment = extractDomainToken();
+    if (segment == null || segment.isEmpty) {
+      return fallback;
+    }
+
+    final separated = segment.contains(RegExp('[-_]'))
+        ? segment
+        : _splitCompactDomainToken(segment);
+    final words = separated
+        .split(RegExp('[-_]+'))
+        .where((word) => word.trim().isNotEmpty)
+        .map(
+          (word) => '${word[0].toUpperCase()}${word.substring(1)}',
+        )
+        .toList();
+    if (words.isEmpty) {
+      return fallback;
+    }
+    return words.join(' ');
+  }
+
+  static String _splitCompactDomainToken(String token) {
+    for (final suffix in _displayNameCompactSuffixes) {
+      if (!token.endsWith(suffix) || token == suffix) {
+        continue;
+      }
+
+      final prefix = token.substring(0, token.length - suffix.length);
+      if (prefix.length < 3) {
+        continue;
+      }
+
+      return '$prefix-$suffix';
+    }
+
+    return token;
   }
 
   String slugify() {

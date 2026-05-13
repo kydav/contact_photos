@@ -2,6 +2,8 @@ import 'package:contact_photos/extensions/string_extensions.dart';
 import 'package:contact_photos/extensions/uri_extensions.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/services/ai_service.dart';
+import 'package:http/http.dart' as http;
+import 'package:meta/meta.dart';
 
 class HybridCompanySearchService {
   static Future<List<CompanySearchResult>> searchCompanies(String query) async {
@@ -144,19 +146,19 @@ class LocalCompanySearchService {
 
   static Future<List<String>> _probeCandidateWebsites(String query) async {
     final candidates = _buildWebsiteCandidatesFromQuery(query);
-    final verified = <String>[];
+    final verified = <String>{};
 
     for (final website in candidates) {
-      final isReachable = await _looksLikeLiveWebsite(website);
-      if (!isReachable) {
+      final resolvedWebsite = await resolveLiveWebsite(website);
+      if (resolvedWebsite == null) {
         continue;
       }
-      verified.add(website);
+      verified.add(resolvedWebsite);
       if (verified.length >= 3) {
         break;
       }
     }
-    return verified;
+    return verified.toList();
   }
 
   static List<String> _buildWebsiteCandidatesFromQuery(String query) {
@@ -205,49 +207,83 @@ class LocalCompanySearchService {
     return candidates.toList();
   }
 
-  static Future<bool> _looksLikeLiveWebsite(String website) async {
+  @visibleForTesting
+  static Future<String?> resolveLiveWebsite(
+    String website, {
+    http.Client? client,
+  }) async {
     final normalizedUri = website.normalizeWebsiteUri();
     if (normalizedUri == null) {
-      return false;
+      return null;
     }
 
-    for (final uri in normalizedUri.buildWebsiteCandidates()) {
-      final response = await uri.tryGet();
-      if (response == null) {
-        continue;
+    final ownedClient = client ?? http.Client();
+    try {
+      for (final uri in normalizedUri.buildWebsiteCandidates()) {
+        final resolvedUri = await _resolveRedirectedWebsiteUri(
+          uri,
+          client: ownedClient,
+        );
+        final resolvedWebsite = resolvedUri?.toString().normalizeWebsiteUrl();
+        if (resolvedWebsite != null) {
+          return resolvedWebsite;
+        }
       }
-
-      if (response.statusCode >= 200 && response.statusCode < 400) {
-        return true;
+      return null;
+    } finally {
+      if (client == null) {
+        ownedClient.close();
       }
     }
-    return false;
+  }
+
+  static Future<Uri?> _resolveRedirectedWebsiteUri(
+    Uri startUri, {
+    required http.Client client,
+  }) async {
+    var currentUri = startUri;
+
+    for (var redirectCount = 0; redirectCount < 5; redirectCount++) {
+      http.StreamedResponse response;
+      try {
+        final request = http.Request('GET', currentUri)
+          ..followRedirects = false
+          ..maxRedirects = 0
+          ..headers.addAll(const {
+            'User-Agent':
+                'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Mobile',
+            'Accept':
+                'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,image/*,*/*;q=0.8',
+          });
+        response =
+            await client.send(request).timeout(const Duration(seconds: 6));
+      } catch (_) {
+        return null;
+      }
+
+      try {
+        if (response.statusCode >= 200 && response.statusCode < 300) {
+          return currentUri;
+        }
+
+        final location = response.headers['location'];
+        final isRedirect =
+            response.statusCode >= 300 && response.statusCode < 400;
+        if (!isRedirect || location == null || location.isEmpty) {
+          return null;
+        }
+
+        currentUri = currentUri.resolve(location);
+      } finally {
+        await response.stream.drain<void>();
+      }
+    }
+
+    return null;
   }
 
   static String _companyNameFromWebsite(String website) {
-    final uri = Uri.tryParse(website);
-    if (uri == null || uri.host.isEmpty) {
-      return 'Unknown Company';
-    }
-    final host = uri.host.toLowerCase();
-    final withoutWww = host.startsWith('www.') ? host.substring(4) : host;
-    final mainSegment = withoutWww.split('.').first;
-    final words = mainSegment
-        .split('-')
-        .where((word) => word.trim().isNotEmpty)
-        .map(_capitalize)
-        .toList();
-    if (words.isEmpty) {
-      return 'Unknown Company';
-    }
-    return words.join(' ');
-  }
-
-  static String _capitalize(String value) {
-    if (value.isEmpty) {
-      return value;
-    }
-    return '${value[0].toUpperCase()}${value.substring(1)}';
+    return website.inferCompanyNameFromWebsite();
   }
 
   static const Set<String> _commonNoiseTokens = {

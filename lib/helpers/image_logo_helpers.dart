@@ -11,6 +11,16 @@ import 'package:http/http.dart' as http;
 
 class ImageLogoHelpers {
   static const bool _enablePerIndexLogging = true;
+  static const Set<String> _commonCompactDomainSuffixes = {
+    'bank',
+    'care',
+    'cookies',
+    'group',
+    'health',
+    'labs',
+    'services',
+    'systems',
+  };
 
   static const Duration _candidateDownloadTimeout = Duration(seconds: 10);
   static const Duration _candidateProcessingTimeout = Duration(seconds: 3);
@@ -395,6 +405,23 @@ class ImageLogoHelpers {
     }
   }
 
+  static void _logSourceUris({
+    required String source,
+    required Iterable<Uri> uris,
+  }) {
+    if (!_enablePerIndexLogging) {
+      return;
+    }
+
+    final uriList = uris.toList();
+    for (var index = 0; index < uriList.length; index++) {
+      developer.log(
+        '[source-uri ${index + 1}/${uriList.length}] source=$source, uri=${uriList[index]}',
+        name: 'ImageLogoHelpers',
+      );
+    }
+  }
+
   static List<CompanyImageOption> mergeImageOptions(
     List<CompanyImageOption> primary,
     List<CompanyImageOption> additional,
@@ -492,6 +519,8 @@ class ImageLogoHelpers {
     if (pageUris.isEmpty) {
       return [];
     }
+
+    _logSourceUris(source: 'logos-world-page', uris: pageUris);
 
     final companyTokens = companyName.extractCompanyTokens();
     final allowSocialAssetUrls = _allowsSocialAssetUrlsForCompany(companyName);
@@ -708,29 +737,56 @@ class ImageLogoHelpers {
     final slugCandidates = <String>{};
     final nameTokens = companyName.extractCompanyTokens();
 
+    void addSlugCandidate(String? rawSlug) {
+      if (rawSlug == null || rawSlug.isEmpty) {
+        return;
+      }
+
+      final cleaned = rawSlug.replaceAll(RegExp('-+'), '-');
+      if (cleaned.isEmpty) {
+        return;
+      }
+      slugCandidates.add(cleaned);
+    }
+
     final fullSlug = companyName.slugify();
     if (fullSlug.isNotEmpty) {
-      slugCandidates.add(fullSlug);
+      addSlugCandidate(fullSlug);
     }
 
     if (nameTokens.isNotEmpty) {
-      slugCandidates.add(nameTokens.join('-'));
+      addSlugCandidate(nameTokens.join('-'));
+      addSlugCandidate(nameTokens.join());
     }
     if (nameTokens.length >= 2) {
-      slugCandidates.add('${nameTokens.first}-${nameTokens[1]}');
+      addSlugCandidate('${nameTokens.first}-${nameTokens[1]}');
+      addSlugCandidate('${nameTokens.first}${nameTokens[1]}');
     }
 
     final websiteHost = companyWebsiteUrl.extractDomainToken();
     if (websiteHost != null && websiteHost.isNotEmpty) {
-      slugCandidates.add(websiteHost.slugify());
+      addSlugCandidate(websiteHost.slugify());
+      addSlugCandidate(websiteHost.replaceAll(RegExp('[^a-z0-9]+'), ''));
+
+      final compactHost = websiteHost.replaceAll(RegExp('[^a-z0-9]+'), '');
+      for (final suffix in _commonCompactDomainSuffixes) {
+        if (!compactHost.endsWith(suffix) || compactHost == suffix) {
+          continue;
+        }
+
+        final prefix = compactHost.substring(0, compactHost.length - suffix.length);
+        if (prefix.length < 3) {
+          continue;
+        }
+
+        addSlugCandidate('$prefix-$suffix');
+      }
     }
 
-    final cleanedCandidates = slugCandidates
-        .map((slug) => slug.replaceAll(RegExp('-+'), '-'))
-        .where((slug) => slug.isNotEmpty)
-        .take(6);
+    final cleanedCandidates = slugCandidates.where((slug) => slug.isNotEmpty);
 
     return cleanedCandidates
+        .take(8)
         .map((slug) => Uri.parse('https://logos-world.net/$slug-logo/'))
         .toList();
   }
