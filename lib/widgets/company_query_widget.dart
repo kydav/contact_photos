@@ -293,10 +293,12 @@ class CompanyQueryWidget extends HookWidget {
           ),
         ],
         if (hasSearched.value && !isLoading.value) ...[
-          FilledButton.tonalIcon(
-            onPressed: openManualUrlSheet,
-            icon: const Icon(Icons.link),
-            label: const Text('Enter Company URL Manually'),
+          Center(
+            child: FilledButton.tonalIcon(
+              onPressed: openManualUrlSheet,
+              icon: const Icon(Icons.link),
+              label: const Text('Enter Company URL Manually'),
+            ),
           ),
         ],
       ],

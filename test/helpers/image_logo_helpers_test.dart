@@ -20,5 +20,32 @@ void main() {
         contains('https://logos-world.net/crumbl-cookies-logo/'),
       );
     });
+
+    test('filters numbered logos-world asset files from extracted results', () {
+      final urls = ImageLogoHelpers.extractLogoImageUrlsFromHtml(
+        '''
+        <html>
+          <body>
+            <img alt="logo" src="https://logos-world.net/wp-content/uploads/2024/01/logos-world.net_3.png" />
+            <img alt="logo" src="https://logos-world.net/wp-content/uploads/2024/01/crumblcookies-logo.png" />
+          </body>
+        </html>
+        ''',
+        Uri.parse('https://logos-world.net/crumblcookies-logo/'),
+      );
+
+      expect(
+        urls,
+        isNot(contains(
+          'https://logos-world.net/wp-content/uploads/2024/01/logos-world.net_3.png',
+        )),
+      );
+      expect(
+        urls,
+        contains(
+          'https://logos-world.net/wp-content/uploads/2024/01/crumblcookies-logo.png',
+        ),
+      );
+    });
   });
 }

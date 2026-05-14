@@ -53,6 +53,24 @@ class ImageLogoHelpers {
     return lower.contains('fbcdn') || lower.contains('cdninstagram');
   }
 
+  static bool _isDisallowedLogosWorldAssetUrl(String url) {
+    final uri = Uri.tryParse(url);
+    if (uri == null) {
+      return false;
+    }
+
+    final host = uri.host.toLowerCase();
+    if (host != 'logos-world.net' && host != 'www.logos-world.net') {
+      return false;
+    }
+
+    final lastSegment = uri.pathSegments.isEmpty ? '' : uri.pathSegments.last;
+    return RegExp(
+      r'^logos-world\.net_\d+\.(png|jpe?g|webp)$',
+      caseSensitive: false,
+    ).hasMatch(lastSegment);
+  }
+
   static List<String> _removeDisallowedMetaWildcardCdnUrls(
     Iterable<String> urls, {
     required bool allowMetaWildcardCdnUrls,
@@ -128,6 +146,7 @@ class ImageLogoHelpers {
       if (uri == null || uri.host.isEmpty) return;
       if (uri.scheme != 'http' && uri.scheme != 'https') return;
       if (absolute.isLikelySvgUrl()) return;
+      if (_isDisallowedLogosWorldAssetUrl(absolute)) return;
       if (!allowMetaWildcardCdnUrls && _isMetaWildcardCdnUrl(absolute)) return;
       if (!allowSocialAssetUrls && absolute.isLikelySocialAssetUrl()) return;
 
@@ -310,6 +329,9 @@ class ImageLogoHelpers {
     bool allowMetaWildcardCdnUrls = true,
   }) async {
     if (!allowMetaWildcardCdnUrls && _isMetaWildcardCdnUrl(url)) {
+      return false;
+    }
+    if (_isDisallowedLogosWorldAssetUrl(url)) {
       return false;
     }
     if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) {
@@ -774,7 +796,8 @@ class ImageLogoHelpers {
           continue;
         }
 
-        final prefix = compactHost.substring(0, compactHost.length - suffix.length);
+        final prefix =
+            compactHost.substring(0, compactHost.length - suffix.length);
         if (prefix.length < 3) {
           continue;
         }
