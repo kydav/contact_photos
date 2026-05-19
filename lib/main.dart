@@ -6,11 +6,16 @@ import 'package:contact_photos/services/preferences_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:liquid_glass_widgets/liquid_glass_setup.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
-  runApp(const MyApp());
+  await LiquidGlassWidgets.initialize();
+  runApp(LiquidGlassWidgets.wrap(
+    child: const MyApp(),
+    adaptiveQuality: true,
+  ));
 }
 
 class MyApp extends HookWidget {
@@ -61,7 +66,7 @@ class MyApp extends HookWidget {
       ),
       darkTheme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.deepPurple, brightness: Brightness.dark),
+            seedColor: Colors.deepPurpleAccent, brightness: Brightness.dark),
         useMaterial3: true,
       ),
       home: home,

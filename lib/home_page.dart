@@ -4,6 +4,7 @@ import 'package:contact_photos/models/company_image_option.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/screens/contact_creation_complete_page.dart';
 import 'package:contact_photos/screens/contact_creation_page.dart';
+import 'package:contact_photos/ui/background.dart';
 import 'package:contact_photos/widgets/company_image_query_widget.dart';
 import 'package:contact_photos/widgets/company_query_widget.dart';
 import 'package:flutter/material.dart';
@@ -49,67 +50,79 @@ class HomePage extends HookWidget {
       await goToPage(0);
     }
 
-    return Scaffold(
-      appBar: AppBar(
-          title: const Text('Add Contact'),
-          leading: showLeading.value
-              ? IconButton(
-                  icon: const Icon(Icons.chevron_left),
-                  onPressed: () {
-                    controller.previousPage(
-                      duration: const Duration(milliseconds: 300),
-                      curve: Curves.easeInOut,
-                    );
-                  },
-                )
-              : null),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: PageView(
-          controller: controller,
-          physics: const NeverScrollableScrollPhysics(),
-          children: [
-            KeyedSubtree(
-              key: ValueKey<String>('search-${resetSeed.value}'),
-              child: CompanyQueryWidget(
-                onCompanySelected: (company) {
-                  selectedCompany.value = company;
-                  selectedImage.value = null;
-                  imageOptions.value = [];
-                  imageStepSeed.value = imageStepSeed.value + 1;
-                  unawaited(goToPage(1));
-                },
-              ),
-            ),
-            KeyedSubtree(
-              key: ValueKey<String>(
-                'images-${resetSeed.value}-${imageStepSeed.value}',
-              ),
-              child: CompanyImageQueryWidget(
-                companyName: selectedCompany.value?.name,
-                companyWebsiteUrl: selectedCompany.value?.websiteUrl,
-                imageOptions: imageOptions,
-                onImageSelected: (imageOption) {
-                  selectedImage.value = imageOption;
-                  unawaited(goToPage(2));
-                },
-              ),
-            ),
-            if (selectedCompany.value != null && selectedImage.value != null)
+    return AppBackground(
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            title: switch (
+                controller.hasClients ? controller.page?.round() ?? 0 : 0) {
+              0 => const Text('Search Companies'),
+              1 => const Text('Select Image'),
+              2 => const Text('Create Contact'),
+              3 => const Text('Complete'),
+              _ => null,
+            },
+            centerTitle: false,
+            leading: showLeading.value
+                ? IconButton(
+                    icon: const Icon(Icons.chevron_left),
+                    onPressed: () {
+                      controller.previousPage(
+                        duration: const Duration(milliseconds: 300),
+                        curve: Curves.easeInOut,
+                      );
+                    },
+                  )
+                : null),
+        body: Padding(
+          padding: const EdgeInsets.all(16.0),
+          child: PageView(
+            controller: controller,
+            physics: const NeverScrollableScrollPhysics(),
+            children: [
               KeyedSubtree(
-                key: ValueKey<String>('contact-${resetSeed.value}'),
-                child: ContactCreationPage(
-                  company: selectedCompany.value!,
-                  imageOption: selectedImage.value!,
-                  onContactCreated: () => unawaited(goToPage(3)),
+                key: ValueKey<String>('search-${resetSeed.value}'),
+                child: CompanyQueryWidget(
+                  onCompanySelected: (company) {
+                    selectedCompany.value = company;
+                    selectedImage.value = null;
+                    imageOptions.value = [];
+                    imageStepSeed.value = imageStepSeed.value + 1;
+                    unawaited(goToPage(1));
+                  },
                 ),
-              )
-            else
-              const Center(child: Text('Select a company and image first.')),
-            ContactCreationCompletePage(
-              onFinish: () => unawaited(finishAndReset()),
-            ),
-          ],
+              ),
+              KeyedSubtree(
+                key: ValueKey<String>(
+                  'images-${resetSeed.value}-${imageStepSeed.value}',
+                ),
+                child: CompanyImageQueryWidget(
+                  companyName: selectedCompany.value?.name,
+                  companyWebsiteUrl: selectedCompany.value?.websiteUrl,
+                  imageOptions: imageOptions,
+                  onImageSelected: (imageOption) {
+                    selectedImage.value = imageOption;
+                    unawaited(goToPage(2));
+                  },
+                ),
+              ),
+              if (selectedCompany.value != null && selectedImage.value != null)
+                KeyedSubtree(
+                  key: ValueKey<String>('contact-${resetSeed.value}'),
+                  child: ContactCreationPage(
+                    company: selectedCompany.value!,
+                    imageOption: selectedImage.value!,
+                    onContactCreated: () => unawaited(goToPage(3)),
+                  ),
+                )
+              else
+                const Center(child: Text('Select a company and image first.')),
+              ContactCreationCompletePage(
+                onFinish: () => unawaited(finishAndReset()),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -1,7 +1,8 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:image/image.dart' as img;
-import 'package:permission_handler/permission_handler.dart';
+import 'package:permission_handler/permission_handler.dart'
+    hide PermissionStatus;
 
 enum ContactsPermissionResult {
   granted,
@@ -27,8 +28,11 @@ class ContactsService {
     Uint8List? photoBytes,
     bool photoAlreadyAdjusted = false,
   }) async {
-    final granted = await FlutterContacts.requestPermission();
-    if (!granted) {
+    final permissionStatus = await FlutterContacts.permissions.request(
+      PermissionType.readWrite,
+    );
+    if (permissionStatus != PermissionStatus.granted &&
+        permissionStatus != PermissionStatus.limited) {
       throw Exception('Contacts permission was not granted.');
     }
 
@@ -38,11 +42,13 @@ class ContactsService {
 
     final contact = Contact(
       name: Name(first: companyName),
-      phones: [Phone(phoneNumber)],
-      photo: optimizedPhotoBytes,
+      phones: [Phone(number: phoneNumber)],
+      photo: optimizedPhotoBytes == null
+          ? null
+          : Photo(fullSize: optimizedPhotoBytes),
     );
 
-    await FlutterContacts.insertContact(contact);
+    await FlutterContacts.create(contact);
   }
 
   static Uint8List? _optimizePhotoForContactBubble(Uint8List? originalBytes) {

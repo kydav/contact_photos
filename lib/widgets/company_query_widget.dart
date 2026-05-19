@@ -1,9 +1,11 @@
+import 'dart:math' as math;
+
 import 'package:contact_photos/extensions/string_extensions.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/services/hybrid_company_search_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
-import 'package:webview_flutter/webview_flutter.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 typedef CompanySelectedCallback = void Function(CompanySearchResult company);
 
@@ -47,106 +49,135 @@ class CompanyQueryWidget extends HookWidget {
       }
     }
 
-    void openWebsite(CompanySearchResult company) {
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => CompanyWebsitePage(
-            title: company.name,
-            websiteUrl: company.websiteUrl,
-          ),
-        ),
-      );
-    }
-
-    String deriveCompanyNameFromWebsite(String websiteUrl) {
-      return websiteUrl.inferCompanyNameFromWebsite(fallback: 'Manual Company');
-    }
-
     Future<void> openManualUrlSheet() async {
       final urlController = TextEditingController();
       String? sheetError;
 
       final selected = await showModalBottomSheet<CompanySearchResult>(
         context: context,
+        backgroundColor: Colors.transparent,
         isScrollControlled: true,
         builder: (sheetContext) {
           return StatefulBuilder(
             builder: (context, setSheetState) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+              return GlassSheet(
+                settings: LiquidGlassSettings(
+                  blur: 12,
+                  thickness: 5,
+                  ambientStrength: 0.5,
+                  lightIntensity: 0.6,
+                  lightAngle: 0.75 * math.pi,
+                  glassColor: Colors.white.withValues(alpha: 0.12),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Enter Company URL',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 8),
-                    TextField(
-                      controller: urlController,
-                      keyboardType: TextInputType.url,
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: 'Website URL',
-                        hintText: 'https://example.com',
-                        border: OutlineInputBorder(),
-                      ),
-                      onSubmitted: (_) {
-                        final normalized =
-                            urlController.text.trim().normalizeWebsiteUrl();
-                        if (normalized == null) {
-                          setSheetState(() {
-                            sheetError = 'Enter a valid website URL.';
-                          });
-                          return;
-                        }
-
-                        Navigator.of(sheetContext).pop(
-                          CompanySearchResult(
-                            name: deriveCompanyNameFromWebsite(normalized),
-                            websiteUrl: normalized,
-                          ),
-                        );
-                      },
-                    ),
-                    if (sheetError != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        sheetError!,
+                child: Padding(
+                  padding: const EdgeInsets.all(24.0),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Enter Company URL',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                          color: Colors.white,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: () {
-                        final normalized =
-                            urlController.text.trim().normalizeWebsiteUrl();
-                        if (normalized == null) {
-                          setSheetState(() {
-                            sheetError = 'Enter a valid website URL.';
-                          });
-                          return;
-                        }
+                      const SizedBox(height: 8),
+                      GlassTextField(
+                        controller: urlController,
+                        keyboardType: TextInputType.url,
+                        textInputAction: TextInputAction.done,
+                        shape: const LiquidRoundedRectangle(borderRadius: 40),
+                        settings: LiquidGlassSettings(
+                          thickness: 5,
+                          ambientStrength: 0.5,
+                          lightIntensity: 0.8,
+                          lightAngle: 0.75 * math.pi,
+                          glassColor: Colors.blue.withValues(alpha: 0.1),
+                        ),
+                        onSubmitted: (_) {
+                          final normalized =
+                              urlController.text.trim().normalizeWebsiteUrl();
+                          if (normalized == null) {
+                            setSheetState(() {
+                              sheetError = 'Enter a valid website URL.';
+                            });
+                            return;
+                          }
 
-                        Navigator.of(sheetContext).pop(
-                          CompanySearchResult(
-                            name: deriveCompanyNameFromWebsite(normalized),
-                            websiteUrl: normalized,
+                          Navigator.of(sheetContext).pop(
+                            CompanySearchResult(
+                              name: normalized.inferCompanyNameFromWebsite(
+                                  fallback: 'Manual Company'),
+                              websiteUrl: normalized,
+                            ),
+                          );
+                        },
+                      ),
+                      if (sheetError != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          sheetError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
                           ),
-                        );
-                      },
-                      child: const Text('Use This URL'),
-                    ),
-                  ],
+                        ),
+                      ],
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        spacing: 10,
+                        children: [
+                          GlassButton(
+                            icon: const Icon(Icons.close),
+                            label: 'Cancel',
+                            height: 50,
+                            width: 50,
+                            settings: LiquidGlassSettings(
+                              thickness: 5,
+                              ambientStrength: 0.5,
+                              lightIntensity: 0.8,
+                              lightAngle: 0.75 * math.pi,
+                              glassColor: Colors.blue.withValues(alpha: 0.1),
+                            ),
+                            onTap: () => Navigator.pop(context),
+                          ),
+                          GlassButton(
+                            icon: const Icon(Icons.check),
+                            label: 'Done',
+                            height: 50,
+                            width: 50,
+                            settings: LiquidGlassSettings(
+                              thickness: 5,
+                              ambientStrength: 0.5,
+                              lightIntensity: 0.8,
+                              lightAngle: 0.75 * math.pi,
+                              glassColor: Colors.blue.withValues(alpha: 0.1),
+                            ),
+                            onTap: () {
+                              final normalized = urlController.text
+                                  .trim()
+                                  .normalizeWebsiteUrl();
+                              if (normalized == null) {
+                                setSheetState(() {
+                                  sheetError = 'Enter a valid website URL.';
+                                });
+                                return;
+                              }
+                              Navigator.of(sheetContext).pop(
+                                CompanySearchResult(
+                                  name: normalized.inferCompanyNameFromWebsite(
+                                      fallback: 'Manual Company'),
+                                  websiteUrl: normalized,
+                                ),
+                              );
+                            },
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
                 ),
               );
             },
@@ -159,65 +190,69 @@ class CompanyQueryWidget extends HookWidget {
       }
     }
 
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      spacing: 8,
-      children: [
-        const Text(
-          'Search Companies',
-          style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-        ),
-        Row(children: [
-          Expanded(
-            child: TextField(
-              controller: queryController,
-              textInputAction: TextInputAction.search,
-              onSubmitted: (_) => searchCompanies(),
-              decoration: const InputDecoration(
-                labelText: 'Company name',
-                border: OutlineInputBorder(),
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 5.0),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        spacing: 8,
+        children: [
+          Row(children: [
+            Expanded(
+              child: GlassSearchBar(
+                controller: queryController,
+                onSubmitted: (_) => searchCompanies(),
               ),
             ),
-          ),
-          const SizedBox(
-            width: 5,
-          ),
-          IconButton.filled(
-              onPressed: isLoading.value ? null : searchCompanies,
-              icon: const Icon(Icons.search))
-        ]),
-        if (isLoading.value) ...[
-          const LinearProgressIndicator(),
-        ],
-        if (errorText.value != null) ...[
-          Text(
-            errorText.value!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        ],
-        if (hasSearched.value &&
-            companies.value.isEmpty &&
-            !isLoading.value) ...[
-          const Text('No companies matched your query.'),
-        ],
-        if (companies.value.isNotEmpty) ...[
-          const SizedBox(height: 4),
-          Expanded(
-            child: SingleChildScrollView(
-              child: ListView.separated(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: companies.value.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 4),
-                itemBuilder: (context, index) {
-                  final company = companies.value[index];
-                  return Card(
-                    child: ListTile(
-                      title: Row(
-                        children: [
-                          Text(company.name),
-                          IconButton(
-                              onPressed: () {
+          ]),
+          if (isLoading.value) ...[
+            const Center(child: GlassProgressIndicator.linear())
+          ],
+          if (errorText.value != null) ...[
+            Text(
+              errorText.value!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
+          if (hasSearched.value &&
+              companies.value.isEmpty &&
+              !isLoading.value) ...[
+            const Text('No companies matched your query.'),
+          ],
+          if (companies.value.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Expanded(
+              child: SingleChildScrollView(
+                child: ListView.separated(
+                  shrinkWrap: true,
+                  physics: const NeverScrollableScrollPhysics(),
+                  itemCount: companies.value.length,
+                  separatorBuilder: (_, __) => const SizedBox(height: 4),
+                  itemBuilder: (context, index) {
+                    final company = companies.value[index];
+                    return GlassCard(
+                      shape: const LiquidRoundedRectangle(borderRadius: 20),
+                      child: ListTile(
+                        contentPadding: const EdgeInsets.symmetric(
+                            horizontal: 1, vertical: 2),
+                        title: Text(company.name),
+                        subtitle: Text(company.websiteUrl),
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          spacing: 5,
+                          children: [
+                            GlassButton(
+                              icon: const Icon(Icons.edit),
+                              label: 'Edit',
+                              height: 50,
+                              width: 50,
+                              settings: LiquidGlassSettings(
+                                thickness: 5,
+                                ambientStrength: 0.5,
+                                lightIntensity: 0.8,
+                                lightAngle: 0.75 * math.pi,
+                                glassColor: Colors.blue.withValues(alpha: 0.1),
+                              ),
+                              onTap: () {
                                 final editController =
                                     TextEditingController(text: company.name);
                                 final urlController = TextEditingController(
@@ -225,32 +260,38 @@ class CompanyQueryWidget extends HookWidget {
                                 showDialog(
                                   context: context,
                                   builder: (context) {
-                                    return AlertDialog(
-                                      title: const Text('Edit Company Name'),
+                                    return GlassDialog(
+                                      title: 'Edit Company Name',
+                                      maxWidth: double.infinity,
+                                      settings: LiquidGlassSettings(
+                                        blur: 12,
+                                        thickness: 5,
+                                        ambientStrength: 0.5,
+                                        lightIntensity: 0.6,
+                                        lightAngle: 0.75 * math.pi,
+                                        glassColor: Colors.white
+                                            .withValues(alpha: 0.08),
+                                      ),
                                       content: Column(
                                         mainAxisSize: MainAxisSize.min,
+                                        spacing: 10,
                                         children: [
-                                          TextField(
+                                          GlassTextField(
                                             controller: editController,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Company Name',
-                                            ),
+                                            placeholder: 'Company Name',
                                           ),
-                                          TextField(
-                                            controller: urlController,
-                                            decoration: const InputDecoration(
-                                              labelText: 'Website URL',
-                                            ),
-                                          ),
+                                          GlassTextField(
+                                              controller: urlController,
+                                              placeholder: 'Website URL'),
                                         ],
                                       ),
                                       actions: [
-                                        TextButton(
-                                          onPressed: () =>
-                                              Navigator.of(context).pop(),
-                                          child: const Text('Cancel'),
-                                        ),
-                                        ElevatedButton(
+                                        GlassDialogAction(
+                                            label: 'Cancel',
+                                            onPressed: () =>
+                                                Navigator.of(context).pop()),
+                                        GlassDialogAction(
+                                          label: 'Save',
                                           onPressed: () {
                                             final newName =
                                                 editController.text.trim();
@@ -263,70 +304,213 @@ class CompanyQueryWidget extends HookWidget {
                                             }
                                             Navigator.of(context).pop();
                                           },
-                                          child: const Text('Save'),
-                                        ),
+                                        )
                                       ],
                                     );
                                   },
                                 );
                               },
-                              icon: const Icon(Icons.edit)),
-                        ],
-                      ),
-                      subtitle: TextButton(
-                        onPressed: () => openWebsite(company),
-                        style: TextButton.styleFrom(
-                          alignment: Alignment.centerLeft,
-                          padding: EdgeInsets.zero,
+                            ),
+                            GlassButton(
+                              icon: const Icon(Icons.check),
+                              label: 'Done',
+                              height: 50,
+                              width: 50,
+                              settings: LiquidGlassSettings(
+                                thickness: 5,
+                                ambientStrength: 0.5,
+                                lightIntensity: 0.8,
+                                lightAngle: 0.75 * math.pi,
+                                glassColor: Colors.blue.withValues(alpha: 0.1),
+                              ),
+                              onTap: () => onCompanySelected(company),
+                            ),
+                          ],
                         ),
-                        child: Text(company.websiteUrl),
                       ),
-                      trailing: FilledButton(
-                        onPressed: () => onCompanySelected(company),
-                        child: const Text('Select'),
-                      ),
-                    ),
-                  );
-                },
+                      // Column(
+                      //   mainAxisSize: MainAxisSize.min,
+                      //   children: [
+
+                      //     Row(
+                      //       children: [
+
+                      //         Text(company.name),
+                      //         IconButton(
+                      //             onPressed: () {
+                      //               final editController =
+                      //                   TextEditingController(
+                      //                       text: company.name);
+                      //               final urlController = TextEditingController(
+                      //                   text: company.websiteUrl);
+                      //               showDialog(
+                      //                 context: context,
+                      //                 builder: (context) {
+                      //                   return GlassDialog(
+                      //                     title: 'Edit Company Name',
+                      //                     maxWidth: double.infinity,
+                      //                     settings: LiquidGlassSettings(
+                      //                       blur: 12,
+                      //                       thickness: 5,
+                      //                       ambientStrength: 0.5,
+                      //                       lightIntensity: 0.6,
+                      //                       lightAngle: 0.75 * math.pi,
+                      //                       glassColor: Colors.white
+                      //                           .withValues(alpha: 0.08),
+                      //                     ),
+                      //                     content: Column(
+                      //                       mainAxisSize: MainAxisSize.min,
+                      //                       spacing: 10,
+                      //                       children: [
+                      //                         GlassTextField(
+                      //                           controller: editController,
+                      //                           placeholder: 'Company Name',
+                      //                         ),
+                      //                         GlassTextField(
+                      //                             controller: urlController,
+                      //                             placeholder: 'Website URL'),
+                      //                       ],
+                      //                     ),
+                      //                     actions: [
+                      //                       GlassDialogAction(
+                      //                           label: 'Cancel',
+                      //                           onPressed: () =>
+                      //                               Navigator.of(context)
+                      //                                   .pop()),
+                      //                       GlassDialogAction(
+                      //                         label: 'Save',
+                      //                         onPressed: () {
+                      //                           final newName =
+                      //                               editController.text.trim();
+                      //                           if (newName.isNotEmpty) {
+                      //                             companies.value[index] =
+                      //                                 CompanySearchResult(
+                      //                               name: newName,
+                      //                               websiteUrl:
+                      //                                   company.websiteUrl,
+                      //                             );
+                      //                           }
+                      //                           Navigator.of(context).pop();
+                      //                         },
+                      //                       )
+                      //                     ],
+                      //                   );
+                      //                 },
+                      //               );
+                      //             },
+                      //             icon: const Icon(Icons.edit)),
+                      //         const Spacer(),
+                      //         GlassButton(
+                      //           icon: const Icon(Icons.edit),
+                      //           label: 'Edit',
+                      //           height: 50,
+                      //           width: 50,
+                      //           settings: LiquidGlassSettings(
+                      //             thickness: 5,
+                      //             ambientStrength: 0.5,
+                      //             lightIntensity: 0.8,
+                      //             lightAngle: 0.75 * math.pi,
+                      //             glassColor:
+                      //                 Colors.blue.withValues(alpha: 0.1),
+                      //           ),
+                      //           onTap: () {
+                      //             final editController =
+                      //                 TextEditingController(text: company.name);
+                      //             final urlController = TextEditingController(
+                      //                 text: company.websiteUrl);
+                      //             showDialog(
+                      //               context: context,
+                      //               builder: (context) {
+                      //                 return GlassDialog(
+                      //                   title: 'Edit Company Name',
+                      //                   maxWidth: double.infinity,
+                      //                   settings: LiquidGlassSettings(
+                      //                     blur: 12,
+                      //                     thickness: 5,
+                      //                     ambientStrength: 0.5,
+                      //                     lightIntensity: 0.6,
+                      //                     lightAngle: 0.75 * math.pi,
+                      //                     glassColor: Colors.white
+                      //                         .withValues(alpha: 0.08),
+                      //                   ),
+                      //                   content: Column(
+                      //                     mainAxisSize: MainAxisSize.min,
+                      //                     spacing: 10,
+                      //                     children: [
+                      //                       GlassTextField(
+                      //                         controller: editController,
+                      //                         placeholder: 'Company Name',
+                      //                       ),
+                      //                       GlassTextField(
+                      //                           controller: urlController,
+                      //                           placeholder: 'Website URL'),
+                      //                     ],
+                      //                   ),
+                      //                   actions: [
+                      //                     GlassDialogAction(
+                      //                         label: 'Cancel',
+                      //                         onPressed: () =>
+                      //                             Navigator.of(context).pop()),
+                      //                     GlassDialogAction(
+                      //                       label: 'Save',
+                      //                       onPressed: () {
+                      //                         final newName =
+                      //                             editController.text.trim();
+                      //                         if (newName.isNotEmpty) {
+                      //                           companies.value[index] =
+                      //                               CompanySearchResult(
+                      //                             name: newName,
+                      //                             websiteUrl:
+                      //                                 company.websiteUrl,
+                      //                           );
+                      //                         }
+                      //                         Navigator.of(context).pop();
+                      //                       },
+                      //                     )
+                      //                   ],
+                      //                 );
+                      //               },
+                      //             );
+                      //           },
+                      //         ),
+                      //         GlassButton(
+                      //           icon: const Icon(Icons.check),
+                      //           label: 'Done',
+                      //           height: 50,
+                      //           width: 50,
+                      //           settings: LiquidGlassSettings(
+                      //             thickness: 5,
+                      //             ambientStrength: 0.5,
+                      //             lightIntensity: 0.8,
+                      //             lightAngle: 0.75 * math.pi,
+                      //             glassColor:
+                      //                 Colors.blue.withValues(alpha: 0.1),
+                      //           ),
+                      //           onTap: () => onCompanySelected(company),
+                      //         ),
+                      //       ],
+                      //     ),
+                      //     Text(company.websiteUrl),
+                      //   ],
+                      // ),
+                    );
+                  },
+                ),
               ),
             ),
-          ),
-        ],
-        if (hasSearched.value && !isLoading.value) ...[
-          Center(
-            child: FilledButton.tonalIcon(
-              onPressed: openManualUrlSheet,
-              icon: const Icon(Icons.link),
-              label: const Text('Enter Company URL Manually'),
+          ],
+          if (hasSearched.value && !isLoading.value) ...[
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              child: GlassButton.custom(
+                onTap: openManualUrlSheet,
+                shape: const LiquidRoundedRectangle(borderRadius: 40),
+                child: const Text('Enter Company URL Manually'),
+              ),
             ),
-          ),
+          ],
         ],
-      ],
-    );
-  }
-}
-
-class CompanyWebsitePage extends HookWidget {
-  const CompanyWebsitePage({
-    required this.title,
-    required this.websiteUrl,
-    super.key,
-  });
-
-  final String title;
-  final String websiteUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final controller = useMemoized(() {
-      return WebViewController()
-        ..setJavaScriptMode(JavaScriptMode.unrestricted)
-        ..loadRequest(Uri.parse(websiteUrl));
-    }, [websiteUrl]);
-
-    return Scaffold(
-      appBar: AppBar(title: Text(title)),
-      body: WebViewWidget(controller: controller),
+      ),
     );
   }
 }
