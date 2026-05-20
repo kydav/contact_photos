@@ -190,94 +190,70 @@ class CompanyImageQueryWidget extends HookWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        SafeArea(
-          bottom: false,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(12, 8, 12, 12),
-            child: GlassCard(
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(16, 16, 16, 18),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Row(
-                      children: [
-                        Container(
-                          width: 44,
-                          height: 44,
-                          decoration: BoxDecoration(
-                            shape: BoxShape.circle,
-                            color: colorScheme.primary.withValues(
-                              alpha: 0.12,
-                            ),
-                          ),
-                          child: const Icon(
-                            Icons.apartment_rounded,
+        Padding(
+          padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+          child: GlassCard(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: colorScheme.primary.withValues(
+                            alpha: 0.12,
                           ),
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                companyName ?? 'Unknown company',
-                                style: theme.textTheme.titleLarge?.copyWith(
-                                  fontWeight: FontWeight.w700,
-                                ),
-                              ),
-                              const SizedBox(height: 2),
-                              Text(companyWebsiteUrl ?? 'No website found',
-                                  style: theme.textTheme.bodyLarge),
-                            ],
-                          ),
+                        child: const Icon(
+                          Icons.apartment_rounded,
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Review the results below or continue searching for stronger logo matches.',
-                      style: theme.textTheme.bodyMedium?.copyWith(
-                        height: 1.35,
                       ),
-                    ),
-                    if (hasSearchedWebsite.value &&
-                        !hasSearchedLogosWorld.value) ...[
-                      const SizedBox(height: 14),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 10.0),
-                        child: GlassButton.custom(
-                          enabled: !isLoading.value,
-                          onTap: () => SearchHelpers().searchLogosWorldImages(
-                            companyName,
-                            companyWebsiteUrl,
-                            errorText,
-                            imageOptions,
-                            isLoading,
-                            hasSearchedLogosWorld,
-                            progressValue,
-                            progressLabel,
-                          ),
-                          shape: const LiquidRoundedRectangle(
-                            borderRadius: 40,
-                          ),
-                          child: const Text('Keep searching'),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              companyName ?? 'Unknown company',
+                              style: theme.textTheme.titleLarge?.copyWith(
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(companyWebsiteUrl ?? 'No website found',
+                                style: theme.textTheme.bodyLarge),
+                          ],
                         ),
                       ),
                     ],
-                    if (hasSearchedLogosWorld.value &&
-                        !hasSearchedSocial.value) ...[
-                      const SizedBox(height: 14),
-                      GlassButton.custom(
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    'Review the results below or continue searching for stronger logo matches.',
+                    style: theme.textTheme.bodyMedium?.copyWith(
+                      height: 1.35,
+                    ),
+                  ),
+                  if (hasSearchedWebsite.value &&
+                      !hasSearchedLogosWorld.value) ...[
+                    const SizedBox(height: 14),
+                    Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 10.0),
+                      child: GlassButton.custom(
                         enabled: !isLoading.value,
-                        onTap: () => SearchHelpers().searchSocialImages(
+                        onTap: () => SearchHelpers().searchLogosWorldImages(
                           companyName,
                           companyWebsiteUrl,
                           errorText,
                           imageOptions,
                           isLoading,
-                          hasSearchedSocial,
+                          hasSearchedLogosWorld,
                           progressValue,
                           progressLabel,
                         ),
@@ -286,43 +262,64 @@ class CompanyImageQueryWidget extends HookWidget {
                         ),
                         child: const Text('Keep searching'),
                       ),
-                    ],
-                    if (isLoading.value) ...[
-                      const SizedBox(height: 14),
-                      Center(
-                        child: GlassProgressIndicator.linear(
-                          value: progressValue.value,
-                        ),
+                    ),
+                  ],
+                  if (hasSearchedLogosWorld.value &&
+                      !hasSearchedSocial.value) ...[
+                    const SizedBox(height: 14),
+                    GlassButton.custom(
+                      enabled: !isLoading.value,
+                      onTap: () => SearchHelpers().searchSocialImages(
+                        companyName,
+                        companyWebsiteUrl,
+                        errorText,
+                        imageOptions,
+                        isLoading,
+                        hasSearchedSocial,
+                        progressValue,
+                        progressLabel,
                       ),
-                      if (progressLabel.value != null) ...[
-                        const SizedBox(height: 6),
-                        Text(
-                          progressLabel.value!,
-                          style: theme.textTheme.bodySmall,
-                          textAlign: TextAlign.center,
-                        ),
-                      ],
-                    ],
-                    if (errorText.value != null) ...[
-                      const SizedBox(height: 12),
-                      Text(
-                        errorText.value!,
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.error,
-                        ),
+                      shape: const LiquidRoundedRectangle(
+                        borderRadius: 40,
                       ),
-                    ],
-                    if (noImagesAfterAllLevels) ...[
-                      const SizedBox(height: 12),
+                      child: const Text('Keep searching'),
+                    ),
+                  ],
+                  if (isLoading.value) ...[
+                    const SizedBox(height: 14),
+                    Center(
+                      child: GlassProgressIndicator.linear(
+                        value: progressValue.value,
+                      ),
+                    ),
+                    if (progressLabel.value != null) ...[
+                      const SizedBox(height: 6),
                       Text(
-                        'No images were found after checking all available options, please upload an image.',
-                        style: theme.textTheme.bodyMedium?.copyWith(
-                          color: colorScheme.error,
-                        ),
+                        progressLabel.value!,
+                        style: theme.textTheme.bodySmall,
+                        textAlign: TextAlign.center,
                       ),
                     ],
                   ],
-                ),
+                  if (errorText.value != null) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      errorText.value!,
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ],
+                  if (noImagesAfterAllLevels) ...[
+                    const SizedBox(height: 12),
+                    Text(
+                      'No images were found after checking all available options, please upload an image.',
+                      style: theme.textTheme.bodyMedium?.copyWith(
+                        color: colorScheme.error,
+                      ),
+                    ),
+                  ],
+                ],
               ),
             ),
           ),
@@ -336,11 +333,11 @@ class CompanyImageQueryWidget extends HookWidget {
                     return Stack(
                       children: [
                         GridView.builder(
-                          padding: EdgeInsets.only(
-                            bottom: hasSearchedWebsite.value && !isLoading.value
-                                ? 96
-                                : 0,
-                          ),
+                          // padding: EdgeInsets.only(
+                          //   bottom: hasSearchedWebsite.value && !isLoading.value
+                          //       ? 96
+                          //       : 0,
+                          // ),
                           itemCount: imageOptions.value.length,
                           gridDelegate:
                               SliverGridDelegateWithFixedCrossAxisCount(
@@ -394,7 +391,7 @@ class CompanyImageQueryWidget extends HookWidget {
                           Positioned(
                             left: 10,
                             right: 10,
-                            bottom: 8,
+                            bottom: 20,
                             child: GlassButton.custom(
                               onTap: openManualImageUploadSheet,
                               shape: const LiquidRoundedRectangle(

@@ -336,7 +336,8 @@ class CompanyQueryWidget extends HookWidget {
           ],
           if (hasSearched.value && !isLoading.value) ...[
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 10.0),
+              padding:
+                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20),
               child: GlassButton.custom(
                 onTap: openManualUrlSheet,
                 shape: const LiquidRoundedRectangle(borderRadius: 40),

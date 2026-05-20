@@ -78,7 +78,7 @@ class HomePage extends HookWidget {
                   )
                 : null),
         body: Padding(
-          padding: const EdgeInsets.all(16.0),
+          padding: const EdgeInsets.symmetric(horizontal: 16.0),
           child: PageView(
             controller: controller,
             physics: const NeverScrollableScrollPhysics(),
