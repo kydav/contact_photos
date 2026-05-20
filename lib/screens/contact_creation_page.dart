@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 import 'package:contact_photos/models/company_image_option.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/services/contacts_service.dart';
@@ -8,6 +9,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_cropper/image_cropper.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 typedef ContactCreatedCallback = void Function();
 
@@ -220,62 +222,73 @@ class ContactCreationPage extends HookWidget {
 
       final updatedName = await showModalBottomSheet<String>(
         context: context,
+        backgroundColor: Colors.transparent,
         isScrollControlled: true,
         builder: (sheetContext) {
-          return StatefulBuilder(
-            builder: (context, setSheetState) {
-              return Padding(
-                padding: EdgeInsets.only(
-                  left: 16,
-                  right: 16,
-                  top: 16,
-                  bottom: MediaQuery.of(context).viewInsets.bottom + 16,
-                ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    const Text(
-                      'Edit Contact Name',
-                      style:
-                          TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-                    ),
-                    const SizedBox(height: 10),
-                    TextField(
-                      controller: nameController,
-                      textInputAction: TextInputAction.done,
-                      decoration: const InputDecoration(
-                        labelText: 'Contact name',
-                        border: OutlineInputBorder(),
-                      ),
-                    ),
-                    if (sheetError != null) ...[
-                      const SizedBox(height: 8),
-                      Text(
-                        sheetError!,
+          return GlassSheet(
+            child: StatefulBuilder(
+              builder: (context, setSheetState) {
+                return Padding(
+                  padding: EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    top: 16,
+                    bottom: MediaQuery.of(context).viewInsets.bottom + 16,
+                  ),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const Text(
+                        'Edit Contact Name',
                         style: TextStyle(
-                          color: Theme.of(context).colorScheme.error,
+                            fontSize: 18, fontWeight: FontWeight.w600),
+                      ),
+                      const SizedBox(height: 10),
+                      GlassTextField(
+                        controller: nameController,
+                        textInputAction: TextInputAction.done,
+                        placeholder: 'Enter contact name',
+                      ),
+                      if (sheetError != null) ...[
+                        const SizedBox(height: 8),
+                        Text(
+                          sheetError!,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.error,
+                          ),
                         ),
+                      ],
+                      const SizedBox(height: 12),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        spacing: 10,
+                        children: [
+                          GlassButton(
+                            onTap: () {
+                              Navigator.of(sheetContext).pop();
+                            },
+                            icon: const Icon(Icons.close),
+                          ),
+                          GlassButton(
+                            onTap: () {
+                              final value = nameController.text.trim();
+                              if (value.isEmpty) {
+                                setSheetState(() {
+                                  sheetError = 'Name cannot be empty.';
+                                });
+                                return;
+                              }
+                              Navigator.of(sheetContext).pop(value);
+                            },
+                            icon: const Icon(Icons.check),
+                          ),
+                        ],
                       ),
                     ],
-                    const SizedBox(height: 12),
-                    FilledButton(
-                      onPressed: () {
-                        final value = nameController.text.trim();
-                        if (value.isEmpty) {
-                          setSheetState(() {
-                            sheetError = 'Name cannot be empty.';
-                          });
-                          return;
-                        }
-                        Navigator.of(sheetContext).pop(value);
-                      },
-                      child: const Text('Save Name'),
-                    ),
-                  ],
-                ),
-              );
-            },
+                  ),
+                );
+              },
+            ),
           );
         },
       );
@@ -351,10 +364,10 @@ class ContactCreationPage extends HookWidget {
           Row(
             children: [
               Expanded(child: Text('Company: ${contactName.value}')),
-              IconButton(
-                onPressed: isSaving.value ? null : editContactName,
+              GlassButton(
+                enabled: !isSaving.value,
+                onTap: editContactName,
                 icon: const Icon(Icons.edit),
-                tooltip: 'Edit name',
               ),
             ],
           ),
@@ -408,11 +421,18 @@ class ContactCreationPage extends HookWidget {
             ),
           ],
           const SizedBox(height: 8),
-          FilledButton.tonalIcon(
-            onPressed: (isSaving.value || isCropping.value) ? null : cropImage,
+          GlassButton(
+            shape: const LiquidRoundedRectangle(borderRadius: 40),
+            enabled: (!isSaving.value || !isCropping.value),
+            onTap: cropImage,
             icon: const Icon(Icons.crop),
-            label:
-                Text(isCropping.value ? 'Opening Cropper...' : 'Adjust Image'),
+            settings: LiquidGlassSettings(
+              thickness: 5,
+              ambientStrength: 0.5,
+              lightIntensity: 0.8,
+              lightAngle: 0.75 * math.pi,
+              glassColor: Colors.blue.withValues(alpha: 0.1),
+            ),
           ),
           if (kIsWeb ||
               (defaultTargetPlatform != TargetPlatform.android &&
@@ -430,17 +450,16 @@ class ContactCreationPage extends HookWidget {
             ),
           ],
           const SizedBox(height: 12),
-          TextField(
+          GlassTextField(
             controller: phoneController,
             keyboardType: TextInputType.phone,
-            decoration: const InputDecoration(
-              labelText: 'Phone number',
-              border: OutlineInputBorder(),
-            ),
+            placeholder: 'Enter phone number',
           ),
           const SizedBox(height: 10),
-          FilledButton(
-            onPressed: isSaving.value ? null : () => unawaited(createContact()),
+          GlassButton.custom(
+            enabled: !isSaving.value,
+            onTap: () => unawaited(createContact()),
+            shape: const LiquidRoundedRectangle(borderRadius: 40),
             child: const Text('Create Contact'),
           ),
           if (isSaving.value) ...[

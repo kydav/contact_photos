@@ -18,6 +18,7 @@ class HomePage extends HookWidget {
     final selectedCompany = useState<CompanySearchResult?>(null);
     final selectedImage = useState<CompanyImageOption?>(null);
     final controller = usePageController();
+    final currentPageIndex = useState(0);
     final showLeading = useState(false);
     final resetSeed = useState(0);
     final imageStepSeed = useState(0);
@@ -25,6 +26,7 @@ class HomePage extends HookWidget {
 
     useEffect(() {
       void listener() {
+        currentPageIndex.value = controller.page?.round() ?? 0;
         showLeading.value = controller.page != null &&
             controller.page! > 0.01 &&
             controller.page! < 2.99;
@@ -35,6 +37,7 @@ class HomePage extends HookWidget {
     }, [controller]);
 
     Future<void> goToPage(int page) async {
+      currentPageIndex.value = page;
       await controller.animateToPage(
         page,
         duration: const Duration(milliseconds: 300),
@@ -55,8 +58,7 @@ class HomePage extends HookWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
             backgroundColor: Colors.transparent,
-            title: switch (
-                controller.hasClients ? controller.page?.round() ?? 0 : 0) {
+            title: switch (currentPageIndex.value) {
               0 => const Text('Search Companies'),
               1 => const Text('Select Image'),
               2 => const Text('Create Contact'),
