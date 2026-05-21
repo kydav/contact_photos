@@ -47,5 +47,38 @@ void main() {
         ),
       );
     });
+
+    test('builds a logokit url from the company domain and token', () {
+      final uri = ImageLogoHelpers.buildLogokitLogoUri(
+        'apple.com',
+        token: 'test-token',
+      );
+
+      expect(
+        uri?.toString(),
+        'https://img.logokit.com/apple.com?token=test-token',
+      );
+    });
+
+    test('keeps trusted provider urls competitive in ranking', () {
+      final ranked = ImageLogoHelpers.rankImageCandidates(
+        [
+          'https://example.com/assets/icon.png',
+          'https://img.logokit.com/bladehq.com?token=test-token',
+          'https://logos-api.apistemic.com/domain:bladehq.com',
+        ],
+        'bladehq.com',
+        const ['bladehq'],
+      );
+
+      expect(
+        ranked.take(2),
+        contains('https://img.logokit.com/bladehq.com?token=test-token'),
+      );
+      expect(
+        ranked.take(2),
+        contains('https://logos-api.apistemic.com/domain:bladehq.com'),
+      );
+    });
   });
 }

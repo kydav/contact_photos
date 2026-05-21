@@ -198,6 +198,8 @@ class ContactCreationPage extends HookWidget {
     final currentPhotoBytes = useState<Uint8List>(imageOption.bytes);
     final wasCropped = useState(false);
     final bubbleBackground = useState(_BubbleBackground.white);
+    final theme = Theme.of(context);
+    final colorScheme = theme.colorScheme;
 
     final hasTransparentBackground = useMemoized(
       () => _hasTransparency(currentPhotoBytes.value),
@@ -356,39 +358,128 @@ class ContactCreationPage extends HookWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          const Text(
-            'Create Contact',
-            style: TextStyle(fontSize: 18, fontWeight: FontWeight.w600),
-          ),
-          const SizedBox(height: 8),
-          Row(
-            children: [
-              Expanded(child: Text('Company: ${contactName.value}')),
-              GlassButton(
-                enabled: !isSaving.value,
-                onTap: editContactName,
-                icon: const Icon(Icons.edit),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(2, 30, 2, 20),
+            child: GlassCard(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: colorScheme.primary.withValues(
+                              alpha: 0.12,
+                            ),
+                          ),
+                          child: ClipOval(
+                            child: Image.memory(
+                              previewPhotoBytes,
+                              fit: BoxFit.cover,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                contactName.value,
+                                style: theme.textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.w700,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              Text(company.websiteUrl,
+                                  style: theme.textTheme.bodyLarge),
+                            ],
+                          ),
+                        ),
+                        // GlassButton(
+                        //   enabled: !isSaving.value,
+                        //   onTap: editContactName,
+                        //   icon: const Icon(Icons.edit),
+                        // ),
+                      ],
+                    ),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        GlassButton(
+                          enabled: !isSaving.value,
+                          onTap: editContactName,
+                          icon: const Icon(Icons.edit),
+                        ),
+                        GlassButton(
+                          shape: const LiquidRoundedRectangle(borderRadius: 40),
+                          enabled: !isSaving.value && !isCropping.value,
+                          onTap: cropImage,
+                          icon: const Icon(Icons.crop),
+                          width: 56,
+                          height: 56,
+                          settings: LiquidGlassSettings(
+                            thickness: 5,
+                            ambientStrength: 0.5,
+                            lightIntensity: 0.8,
+                            lightAngle: 0.75 * math.pi,
+                            glassColor: Colors.blue.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ],
+                    )
+                  ],
+                ),
               ),
-            ],
-          ),
-          const SizedBox(height: 8),
-          const Text(
-            'Adjust Contact Bubble Image',
-            style: TextStyle(fontWeight: FontWeight.w600),
+            ),
           ),
           const SizedBox(height: 8),
           Center(
-            child: ClipOval(
-              child: Container(
-                width: 140,
-                height: 140,
-                color: bubbleBackground.value == _BubbleBackground.black
-                    ? Colors.black
-                    : Colors.white,
-                child: Image.memory(
-                  previewPhotoBytes,
-                  fit: BoxFit.cover,
-                ),
+            child: SizedBox(
+              width: 140,
+              height: 140,
+              child: Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  ClipOval(
+                    child: Container(
+                      width: 140,
+                      height: 140,
+                      color: bubbleBackground.value == _BubbleBackground.black
+                          ? Colors.black
+                          : Colors.white,
+                      child: Image.memory(
+                        previewPhotoBytes,
+                        fit: BoxFit.cover,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 70,
+                    bottom: 0,
+                    child: GlassButton(
+                      shape: const LiquidRoundedRectangle(borderRadius: 40),
+                      enabled: !isSaving.value && !isCropping.value,
+                      onTap: cropImage,
+                      icon: const Icon(Icons.crop),
+                      width: 56,
+                      height: 56,
+                      settings: LiquidGlassSettings(
+                        thickness: 5,
+                        ambientStrength: 0.5,
+                        lightIntensity: 0.8,
+                        lightAngle: 0.75 * math.pi,
+                        glassColor: Colors.blue.withValues(alpha: 0.1),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           ),
@@ -420,41 +511,19 @@ class ContactCreationPage extends HookWidget {
               ),
             ),
           ],
-          const SizedBox(height: 8),
-          GlassButton(
-            shape: const LiquidRoundedRectangle(borderRadius: 40),
-            enabled: (!isSaving.value || !isCropping.value),
-            onTap: cropImage,
-            icon: const Icon(Icons.crop),
-            settings: LiquidGlassSettings(
-              thickness: 5,
-              ambientStrength: 0.5,
-              lightIntensity: 0.8,
-              lightAngle: 0.75 * math.pi,
-              glassColor: Colors.blue.withValues(alpha: 0.1),
-            ),
-          ),
-          if (kIsWeb ||
-              (defaultTargetPlatform != TargetPlatform.android &&
-                  defaultTargetPlatform != TargetPlatform.iOS)) ...[
-            const SizedBox(height: 6),
-            const Text(
-              'Image cropper is only available on iOS and Android builds.',
-              style: TextStyle(fontSize: 12),
-            ),
-          ] else ...[
-            const SizedBox(height: 6),
-            const Text(
-              'Tap Adjust Image to crop and resize for the contact bubble.',
-              style: TextStyle(fontSize: 12),
-            ),
-          ],
           const SizedBox(height: 12),
           GlassTextField(
             controller: phoneController,
             keyboardType: TextInputType.phone,
             placeholder: 'Enter phone number',
           ),
+          if (localError.value != null) ...[
+            const SizedBox(height: 8),
+            Text(
+              localError.value!,
+              style: TextStyle(color: Theme.of(context).colorScheme.error),
+            ),
+          ],
           const SizedBox(height: 10),
           GlassButton.custom(
             enabled: !isSaving.value,
@@ -465,13 +534,6 @@ class ContactCreationPage extends HookWidget {
           if (isSaving.value) ...[
             const SizedBox(height: 8),
             const LinearProgressIndicator(),
-          ],
-          if (localError.value != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              localError.value!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
           ],
         ],
       ),

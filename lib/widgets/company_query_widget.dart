@@ -196,6 +196,9 @@ class CompanyQueryWidget extends HookWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         spacing: 8,
         children: [
+          const SizedBox(
+            height: 20,
+          ),
           Row(children: [
             Expanded(
               child: GlassSearchBar(

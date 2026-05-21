@@ -6,6 +6,7 @@ import 'package:contact_photos/extensions/byte_extensions.dart';
 import 'package:contact_photos/extensions/http_extensions.dart';
 import 'package:contact_photos/extensions/string_extensions.dart';
 import 'package:contact_photos/extensions/uri_extensions.dart';
+import 'package:contact_photos/helpers/app_secrets.dart';
 import 'package:contact_photos/models/company_image_option.dart';
 import 'package:http/http.dart' as http;
 
@@ -93,6 +94,9 @@ class ImageLogoHelpers {
       if (!allowSocialAssetUrls && url.isLikelySocialAssetUrl()) {
         value -= 24;
       }
+      if (_isTrustedLogoProviderHost(host)) {
+        value += 12;
+      }
       if (host == primaryHost || host == 'www.$primaryHost') {
         value += 5;
       }
@@ -121,6 +125,40 @@ class ImageLogoHelpers {
     final deduped = <String>{...urls}.toList();
     deduped.sort((a, b) => score(b).compareTo(score(a)));
     return deduped;
+  }
+
+  static bool _isTrustedLogoProviderHost(String host) {
+    return host == 'img.logokit.com' || host == 'logos-api.apistemic.com';
+  }
+
+  static List<String> _prioritizeProviderCandidates(
+    List<String> rankedUrls,
+    List<Uri> providerUris, {
+    int limit = 24,
+  }) {
+    final selected = rankedUrls.take(limit).toList();
+    if (selected.length >= limit && providerUris.isEmpty) {
+      return selected;
+    }
+
+    final selectedSet = selected.toSet();
+    for (final providerUri in providerUris) {
+      final providerUrl = providerUri.toString();
+      if (selectedSet.contains(providerUrl)) {
+        continue;
+      }
+      if (!rankedUrls.contains(providerUrl)) {
+        continue;
+      }
+
+      if (selected.length >= limit) {
+        selectedSet.remove(selected.removeLast());
+      }
+      selected.add(providerUrl);
+      selectedSet.add(providerUrl);
+    }
+
+    return selected;
   }
 
   static List<String> extractLogoImageUrlsFromHtml(
@@ -438,10 +476,47 @@ class ImageLogoHelpers {
     final uriList = uris.toList();
     for (var index = 0; index < uriList.length; index++) {
       developer.log(
-        '[source-uri ${index + 1}/${uriList.length}] source=$source, uri=${uriList[index]}',
+        '[source-uri ${index + 1}/${uriList.length}] source=$source, uri=${_redactSensitiveUri(uriList[index])}',
         name: 'ImageLogoHelpers',
       );
     }
+  }
+
+  static Uri _redactSensitiveUri(Uri uri) {
+    if (!uri.queryParameters.containsKey('token')) {
+      return uri;
+    }
+
+    final redactedQuery = <String, String>{
+      for (final entry in uri.queryParameters.entries)
+        entry.key: entry.key == 'token' ? 'REDACTED' : entry.value,
+    };
+
+    return uri.replace(queryParameters: redactedQuery);
+  }
+
+  static void _logWebsiteProviderStatus({
+    required String provider,
+    required Uri? uri,
+    required bool enabled,
+    required List<String> rankedUrls,
+    required List<String> selectedUrls,
+    String? disabledReason,
+  }) {
+    if (!_enablePerIndexLogging) {
+      return;
+    }
+
+    final redactedUri = uri == null ? null : _redactSensitiveUri(uri);
+    final inRanked = uri != null && rankedUrls.contains(uri.toString());
+    final inSelected = uri != null && selectedUrls.contains(uri.toString());
+
+    developer.log(
+      '[website-provider] provider=$provider, enabled=$enabled, '
+      'ranked=$inRanked, selected=$inSelected, '
+      'reason=${disabledReason ?? 'n/a'}, uri=${redactedUri ?? 'n/a'}',
+      name: 'ImageLogoHelpers',
+    );
   }
 
   static List<CompanyImageOption> mergeImageOptions(
@@ -463,6 +538,27 @@ class ImageLogoHelpers {
     return merged;
   }
 
+  static Uri? buildLogokitLogoUri(
+    String domain, {
+    String? token,
+  }) {
+    final cleanedDomain = domain.trim().toLowerCase();
+    if (cleanedDomain.isEmpty) {
+      return null;
+    }
+
+    final effectiveToken = (token ?? AppSecrets.logokitApiKey).trim();
+    if (effectiveToken.isEmpty) {
+      return null;
+    }
+
+    return Uri.https(
+      'img.logokit.com',
+      cleanedDomain,
+      {'token': effectiveToken},
+    );
+  }
+
   static Future<List<String>> queryImageUrlsFromWebsite({
     required String companyName,
     required String websiteUrl,
@@ -481,10 +577,17 @@ class ImageLogoHelpers {
     final primaryHost = websiteUris.first.host.toLowerCase();
     final domainForLogoApi =
         primaryHost.startsWith('www.') ? primaryHost.substring(4) : primaryHost;
-    discoveredUrls.add(
-      Uri.parse('https://logos-api.apistemic.com/domain:$domainForLogoApi')
-          .toString(),
-    );
+    final logokitLogoUri = buildLogokitLogoUri(domainForLogoApi);
+    final providerUris = <Uri>[];
+    if (logokitLogoUri != null) {
+      discoveredUrls.add(logokitLogoUri.toString());
+      providerUris.add(logokitLogoUri);
+    }
+    final apistemicUri =
+        Uri.parse('https://logos-api.apistemic.com/domain:$domainForLogoApi');
+    discoveredUrls.add(apistemicUri.toString());
+    providerUris.add(apistemicUri);
+    _logSourceUris(source: 'website-provider', uris: providerUris);
 
     for (final websiteUri in websiteUris) {
       discoveredUrls.addAll(websiteUri.buildCommonImageAssetUrls());
@@ -525,7 +628,25 @@ class ImageLogoHelpers {
       companyTokens,
       allowSocialAssetUrls: allowSocialAssetUrls,
     );
-    final result = rankedUrls.take(24).toList();
+    final result = _prioritizeProviderCandidates(
+      rankedUrls,
+      providerUris,
+    );
+    _logWebsiteProviderStatus(
+      provider: 'logokit',
+      uri: logokitLogoUri,
+      enabled: logokitLogoUri != null,
+      rankedUrls: rankedUrls,
+      selectedUrls: result,
+      disabledReason: logokitLogoUri == null ? 'missing-api-key' : null,
+    );
+    _logWebsiteProviderStatus(
+      provider: 'apistemic',
+      uri: apistemicUri,
+      enabled: true,
+      rankedUrls: rankedUrls,
+      selectedUrls: result,
+    );
     _logLogoUrls(source: 'website', urls: result);
     return result;
   }

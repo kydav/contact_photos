@@ -9,6 +9,7 @@ import 'package:contact_photos/widgets/company_image_query_widget.dart';
 import 'package:contact_photos/widgets/company_query_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
+import 'package:liquid_glass_widgets/widgets/interactive/glass_button.dart';
 
 class HomePage extends HookWidget {
   const HomePage({super.key});
@@ -58,6 +59,8 @@ class HomePage extends HookWidget {
         backgroundColor: Colors.transparent,
         appBar: AppBar(
             backgroundColor: Colors.transparent,
+            leadingWidth: showLeading.value ? 40 : null,
+            toolbarHeight: 40,
             title: switch (currentPageIndex.value) {
               0 => const Text('Search Companies'),
               1 => const Text('Select Image'),
@@ -67,9 +70,10 @@ class HomePage extends HookWidget {
             },
             centerTitle: false,
             leading: showLeading.value
-                ? IconButton(
-                    icon: const Icon(Icons.chevron_left),
-                    onPressed: () {
+                ? GlassButton(
+                    icon: const Icon(Icons.arrow_back_ios_new),
+                    iconSize: 14,
+                    onTap: () {
                       controller.previousPage(
                         duration: const Duration(milliseconds: 300),
                         curve: Curves.easeInOut,
