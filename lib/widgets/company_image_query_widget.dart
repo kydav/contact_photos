@@ -7,8 +7,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 typedef CompanyImageSelectedCallback = void Function(CompanyImageOption image);
+
+final Uri _logoKitAttributionUri = Uri.parse('https://logokit.com');
 
 class CompanyImageQueryWidget extends HookWidget {
   const CompanyImageQueryWidget({
@@ -40,6 +43,13 @@ class CompanyImageQueryWidget extends HookWidget {
         hasSearchedLogosWorld.value &&
         hasSearchedSocial.value &&
         imageOptions.value.isEmpty;
+
+    Future<void> openLogoKitAttribution() async {
+      await launchUrl(
+        _logoKitAttributionUri,
+        mode: LaunchMode.externalApplication,
+      );
+    }
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -360,6 +370,28 @@ class CompanyImageQueryWidget extends HookWidget {
                                         width: double.infinity,
                                       ),
                                     ),
+                                    if (imageOption.isFromLogoKit) ...[
+                                      const SizedBox(height: 8),
+                                      TextButton(
+                                        onPressed: openLogoKitAttribution,
+                                        style: TextButton.styleFrom(
+                                          padding: EdgeInsets.zero,
+                                          minimumSize: Size.zero,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
+                                          foregroundColor: colorScheme.primary,
+                                        ),
+                                        child: Text(
+                                          'Logo provided by LogoKit.com',
+                                          textAlign: TextAlign.center,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            decoration:
+                                                TextDecoration.underline,
+                                          ),
+                                        ),
+                                      ),
+                                    ],
                                     const SizedBox(height: 8),
                                     Visibility(
                                       visible: !isLoading.value,
