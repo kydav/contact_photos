@@ -3,11 +3,13 @@ import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 class UpdateNameDialog extends HookWidget {
-  const UpdateNameDialog({super.key});
+  const UpdateNameDialog({this.name, super.key});
+
+  final String? name;
 
   @override
   Widget build(BuildContext context) {
-    final nameController = useTextEditingController();
+    final nameController = useTextEditingController(text: name);
     final sheetError = useState<String?>(null);
     return GlassSheet(
         child: Padding(

@@ -308,7 +308,8 @@ class ContactCreationPage extends HookWidget {
                           context: context,
                           backgroundColor: Colors.transparent,
                           isScrollControlled: true,
-                          builder: (sheetContext) => const UpdateNameDialog(),
+                          builder: (sheetContext) =>
+                              UpdateNameDialog(name: contactName.value),
                         );
 
                         if (updatedName != null && updatedName.isNotEmpty) {
