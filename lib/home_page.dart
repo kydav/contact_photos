@@ -2,11 +2,11 @@ import 'dart:async';
 
 import 'package:contact_photos/models/company_image_option.dart';
 import 'package:contact_photos/models/company_search_result.dart';
+import 'package:contact_photos/screens/company_query/company_query_widget.dart';
 import 'package:contact_photos/screens/contact_creation_complete_page.dart';
-import 'package:contact_photos/screens/contact_creation_page.dart';
+import 'package:contact_photos/screens/contact_creation_page/contact_creation_page.dart';
+import 'package:contact_photos/screens/image_query/company_image_query_widget.dart';
 import 'package:contact_photos/ui/background.dart';
-import 'package:contact_photos/widgets/company_query/company_query_widget.dart';
-import 'package:contact_photos/widgets/image_query/company_image_query_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:liquid_glass_widgets/widgets/interactive/glass_button.dart';
