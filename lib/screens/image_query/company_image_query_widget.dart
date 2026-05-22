@@ -2,8 +2,8 @@ import 'dart:math' as math;
 
 import 'package:contact_photos/helpers/search_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
-import 'package:contact_photos/widgets/image_query/image_query_card.dart';
-import 'package:contact_photos/widgets/image_query/manual_image_dialog.dart';
+import 'package:contact_photos/screens/image_query/image_query_card.dart';
+import 'package:contact_photos/screens/image_query/manual_image_dialog.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
