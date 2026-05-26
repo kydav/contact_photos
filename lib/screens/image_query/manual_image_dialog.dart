@@ -2,7 +2,7 @@ import 'dart:math' as math;
 import 'dart:typed_data';
 
 import 'package:contact_photos/models/company_image_option.dart';
-import 'package:contact_photos/widgets/company_image_query_widget.dart';
+import 'package:contact_photos/screens/image_query/company_image_query_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image_picker/image_picker.dart';
