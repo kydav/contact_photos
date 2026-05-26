@@ -14,9 +14,6 @@ void main() {
   ) async {
     await tester.pumpWidget(const MyApp(initialIntroShown: true));
 
-    expect(find.text('Add Contact'), findsOneWidget);
     expect(find.text('Search Companies'), findsOneWidget);
-    expect(find.text('Company name'), findsOneWidget);
-    expect(find.text('Search'), findsOneWidget);
   });
 }

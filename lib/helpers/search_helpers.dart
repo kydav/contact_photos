@@ -2,6 +2,7 @@ import 'dart:developer' as developer;
 
 import 'package:contact_photos/helpers/image_logo_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
+import 'package:contact_photos/services/local_logo_reasoner.dart';
 import 'package:flutter/material.dart';
 
 class SearchHelpers {
@@ -82,6 +83,40 @@ class SearchHelpers {
         'Website validation produced ${imageOptions.value.length} renderable image(s).',
         name: 'SearchHelpers',
       );
+
+      if (imageOptions.value.length <= 3 && LocalLogoReasoner.isConfigured) {
+        developer.log(
+          'Triggering local Llama fallback because only ${imageOptions.value.length} renderable image(s) were found from the website.',
+          name: 'SearchHelpers',
+        );
+        progressValue.value = null;
+        progressLabel.value = 'Asking local Llama for logo candidates...';
+
+        final llamaUrls = await LocalLogoReasoner.suggestLogoUrls(
+          companyName: companyName,
+          companyWebsiteUrl: companyWebsiteUrl,
+          existingUrls: primaryUrls,
+        );
+
+        if (llamaUrls.isNotEmpty) {
+          final llamaOptions =
+              await ImageLogoHelpers.loadRenderableImageOptions(
+            llamaUrls,
+            allowSocialAssetUrls: allowSocialAssetUrls,
+            excludePlatformBrandLogos: excludePlatformLogos,
+            onProgress: (completed, total) {
+              if (total <= 0) return;
+              progressValue.value = completed / total;
+              progressLabel.value =
+                  'Local Llama fallback: checking image $completed of $total...';
+            },
+          );
+          imageOptions.value = ImageLogoHelpers.mergeImageOptions(
+            imageOptions.value,
+            llamaOptions,
+          );
+        }
+      }
 
       if (imageOptions.value.length <= 3) {
         developer.log(
