@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:contact_photos/home_page.dart';
 import 'package:contact_photos/screens/intro_carousel_screen.dart';
 import 'package:contact_photos/services/preferences_service.dart';
+import 'package:contact_photos/services/purchase_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -12,6 +13,7 @@ Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
   await LiquidGlassWidgets.initialize();
+  PurchaseService.instance.initialize();
   runApp(LiquidGlassWidgets.wrap(
     child: const MyApp(),
     adaptiveQuality: true,
