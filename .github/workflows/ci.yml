@@ -1,0 +1,62 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  analyze-and-test:
+    name: Analyze & Test
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+          cache: true
+
+      - name: Inject Firebase Android config
+        run: echo "${{ secrets.GOOGLE_SERVICES_JSON }}" | base64 --decode > android/app/google-services.json
+
+      - name: Inject Firebase iOS config
+        run: echo "${{ secrets.GOOGLE_SERVICE_INFO_PLIST }}" | base64 --decode > ios/Runner/GoogleService-Info.plist
+
+      - name: Inject Firebase Dart options
+        run: echo "${{ secrets.FIREBASE_OPTIONS_DART }}" | base64 --decode > lib/firebase_options.dart
+
+      - run: flutter pub get
+
+      - run: flutter analyze --fatal-infos
+
+      - run: flutter test
+
+  sanity-android:
+    name: Android Config Sanity
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if example applicationId is present
+        run: |
+          if grep -r "com\.example" android/app/build.gradle android/app/src/main/AndroidManifest.xml 2>/dev/null; then
+            echo "ERROR: placeholder bundle ID found in Android config" >&2
+            exit 1
+          fi
+
+  sanity-ios:
+    name: iOS Config Sanity
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Fail if example bundle ID is present
+        run: |
+          if grep -r "com\.example" ios/Runner.xcodeproj/project.pbxproj 2>/dev/null; then
+            echo "ERROR: placeholder bundle ID found in iOS config" >&2
+            exit 1
+          fi
