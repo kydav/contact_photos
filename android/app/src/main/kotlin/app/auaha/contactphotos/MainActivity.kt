@@ -1,4 +1,4 @@
-package com.example.contact_photos
+package app.auaha.contactphotos
 
 import io.flutter.embedding.android.FlutterActivity
 

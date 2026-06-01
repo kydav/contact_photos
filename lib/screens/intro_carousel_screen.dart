@@ -4,6 +4,7 @@ import 'package:contact_photos/services/contacts_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:permission_handler/permission_handler.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 typedef IntroFinishedCallback = Future<void> Function();
 
@@ -88,7 +89,7 @@ class IntroCarouselScreen extends HookWidget {
                   _IntroSlide(
                     title: 'Contacts Access',
                     body:
-                        'We need access to your contacts so we can create a new contact with the company phone number and selected photo.',
+                        'We need read and write access to your contacts to create a new contact with the company name, phone number, and selected logo.\n\nYour contact data never leaves your device. Company searches may be sent to Google Gemini AI to identify matching businesses.',
                     icon: Icons.contacts_rounded,
                   ),
                 ],
@@ -123,7 +124,7 @@ class IntroCarouselScreen extends HookWidget {
             ],
             FilledButton(
               onPressed: isRequestingPermission.value ? null : handleNext,
-              child: Text(currentPage.value == 0 ? 'Next' : 'Finish'),
+              child: Text(currentPage.value == 0 ? 'Next' : 'Allow Access'),
             ),
             if (currentPage.value == 1) ...[
               TextButton(
@@ -131,9 +132,51 @@ class IntroCarouselScreen extends HookWidget {
                 child: const Text('Open Settings'),
               ),
             ],
+            const SizedBox(height: 4),
+            const _PrivacyFooter(),
           ],
         ),
       ),
+    );
+  }
+}
+
+class _PrivacyFooter extends StatelessWidget {
+  const _PrivacyFooter();
+
+  Future<void> _open(String url) async {
+    final uri = Uri.parse(url);
+    if (await canLaunchUrl(uri)) {
+      await launchUrl(uri, mode: LaunchMode.externalApplication);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final muted = Theme.of(context).colorScheme.outline;
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: muted,
+            textStyle: const TextStyle(fontSize: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+          onPressed: () => unawaited(_open('https://auaha.app/privacy')),
+          child: const Text('Privacy Policy'),
+        ),
+        Text('·', style: TextStyle(color: muted, fontSize: 12)),
+        TextButton(
+          style: TextButton.styleFrom(
+            foregroundColor: muted,
+            textStyle: const TextStyle(fontSize: 12),
+            padding: const EdgeInsets.symmetric(horizontal: 8),
+          ),
+          onPressed: () => unawaited(_open('https://auaha.app/terms')),
+          child: const Text('Terms of Service'),
+        ),
+      ],
     );
   }
 }
