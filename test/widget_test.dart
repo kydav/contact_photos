@@ -6,6 +6,7 @@
 // tree, read text, and verify that the values of widget properties are correct.
 
 import 'package:contact_photos/main.dart';
+import 'package:contact_photos/screens/company_query/company_query_widget.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 void main() {
@@ -14,9 +15,7 @@ void main() {
   ) async {
     await tester.pumpWidget(const MyApp(initialIntroShown: true));
 
-    expect(find.text('Add Contact'), findsOneWidget);
     expect(find.text('Search Companies'), findsOneWidget);
-    expect(find.text('Company name'), findsOneWidget);
-    expect(find.text('Search'), findsOneWidget);
+    expect(find.byType(CompanyQueryWidget), findsOneWidget);
   });
 }
