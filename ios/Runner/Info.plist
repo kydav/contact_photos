@@ -27,7 +27,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSContactsUsageDescription</key>
-	<string>This app needs contacts access to create company contacts with logos for common text-message senders.</string>
+	<string>Contact Photos needs contacts access to create contacts with logos for common message senders.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
