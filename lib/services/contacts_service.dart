@@ -11,7 +11,7 @@ enum ContactsPermissionResult {
 class ContactsService {
   static Future<ContactsPermissionResult> requestContactsPermission() async {
     final permissionStatus = await FlutterContacts.permissions.request(
-      PermissionType.write,
+      PermissionType.readWrite,
     );
     if (permissionStatus == PermissionStatus.granted ||
         permissionStatus == PermissionStatus.limited) {
@@ -30,7 +30,7 @@ class ContactsService {
     bool photoAlreadyAdjusted = false,
   }) async {
     final permissionStatus = await FlutterContacts.permissions.request(
-      PermissionType.write,
+      PermissionType.readWrite,
     );
     if (permissionStatus != PermissionStatus.granted &&
         permissionStatus != PermissionStatus.limited) {
