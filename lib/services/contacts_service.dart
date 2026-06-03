@@ -1,8 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:image/image.dart' as img;
-import 'package:permission_handler/permission_handler.dart'
-    hide PermissionStatus;
 
 enum ContactsPermissionResult {
   granted,
@@ -12,11 +10,14 @@ enum ContactsPermissionResult {
 
 class ContactsService {
   static Future<ContactsPermissionResult> requestContactsPermission() async {
-    final status = await Permission.contacts.request();
-    if (status.isGranted || status.isLimited) {
+    final permissionStatus = await FlutterContacts.permissions.request(
+      PermissionType.write,
+    );
+    if (permissionStatus == PermissionStatus.granted ||
+        permissionStatus == PermissionStatus.limited) {
       return ContactsPermissionResult.granted;
     }
-    if (status.isPermanentlyDenied) {
+    if (permissionStatus == PermissionStatus.permanentlyDenied) {
       return ContactsPermissionResult.permanentlyDenied;
     }
     return ContactsPermissionResult.denied;
@@ -29,7 +30,7 @@ class ContactsService {
     bool photoAlreadyAdjusted = false,
   }) async {
     final permissionStatus = await FlutterContacts.permissions.request(
-      PermissionType.readWrite,
+      PermissionType.write,
     );
     if (permissionStatus != PermissionStatus.granted &&
         permissionStatus != PermissionStatus.limited) {

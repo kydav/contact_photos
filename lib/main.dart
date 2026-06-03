@@ -1,7 +1,7 @@
 import 'dart:async';
 
 import 'package:contact_photos/home_page.dart';
-import 'package:contact_photos/screens/intro_carousel_screen.dart';
+import 'package:contact_photos/screens/intro/intro_carousel_screen.dart';
 import 'package:contact_photos/services/preferences_service.dart';
 import 'package:contact_photos/services/purchase_service.dart';
 import 'package:firebase_core/firebase_core.dart';

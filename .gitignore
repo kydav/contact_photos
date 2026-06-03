@@ -44,6 +44,18 @@ app.*.map.json
 /android/app/profile
 /android/app/release
 
+# Platform build outputs
+ios/build/
+android/build/
+android/app/build/
+ios/.symlinks/
+ios/Pods/
+
+# Android release signing
+android/key.properties
+*.jks
+*.keystore
+
 # Firebase and local secret config
 android/app/google-services.json
 ios/Runner/GoogleService-Info.plist
