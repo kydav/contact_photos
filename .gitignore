@@ -51,6 +51,14 @@ android/app/build/
 ios/.symlinks/
 ios/Pods/
 
+# macOS platform (not a target for this app — Flutter regenerates it)
+/macos/
+
+# Xcode per-user settings
+ios/Runner.xcodeproj/xcuserdata/
+ios/Runner.xcworkspace/xcuserdata/
+**/*.xcuserstate
+
 # Android release signing
 android/key.properties
 *.jks
