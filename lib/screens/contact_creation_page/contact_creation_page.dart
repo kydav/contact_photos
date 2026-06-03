@@ -4,7 +4,9 @@ import 'dart:math' as math;
 import 'package:contact_photos/models/company_image_option.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/screens/contact_creation_page/update_name_dialog.dart';
+import 'package:contact_photos/screens/paywall/paywall_screen.dart';
 import 'package:contact_photos/services/contacts_service.dart';
+import 'package:contact_photos/services/preferences_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -245,6 +247,19 @@ class ContactCreationPage extends HookWidget {
         return;
       }
 
+      // Paywall gate: check entitlement before creating the contact.
+      final isUnlocked = await PreferencesService.isPurchaseUnlocked();
+      if (!isUnlocked) {
+        final count = await PreferencesService.getContactsCreated();
+        if (count >= 3) {
+          if (!context.mounted) return;
+          final unlocked = await PaywallScreen.show(context);
+          if (unlocked != true) {
+            return;
+          }
+        }
+      }
+
       isSaving.value = true;
       localError.value = null;
 
@@ -255,6 +270,7 @@ class ContactCreationPage extends HookWidget {
           photoBytes: previewPhotoBytes,
           photoAlreadyAdjusted: wasCropped.value || hasTransparentBackground,
         );
+        await PreferencesService.incrementContactsCreated();
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Created contact for ${contactName.value}.')),
