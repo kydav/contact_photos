@@ -9,6 +9,7 @@ import 'package:contact_photos/services/contacts_service.dart';
 import 'package:contact_photos/services/preferences_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_cropper/image_cropper.dart';
@@ -415,6 +416,9 @@ class ContactCreationPage extends HookWidget {
             controller: phoneController,
             keyboardType: TextInputType.phone,
             placeholder: 'Enter phone number',
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
           ),
           if (localError.value != null) ...[
             const SizedBox(height: 8),
