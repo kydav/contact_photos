@@ -1,5 +1,4 @@
 import 'dart:async';
-import 'dart:developer' as developer;
 import 'dart:typed_data';
 
 import 'package:contact_photos/extensions/byte_extensions.dart';
@@ -11,7 +10,6 @@ import 'package:contact_photos/models/company_image_option.dart';
 import 'package:http/http.dart' as http;
 
 class ImageLogoHelpers {
-  static const bool _enablePerIndexLogging = true;
   static const Set<String> _commonCompactDomainSuffixes = {
     'bank',
     'care',
@@ -257,14 +255,6 @@ class ImageLogoHelpers {
         break;
       }
 
-      final attemptStopwatch = Stopwatch()..start();
-      _logCandidate(
-        index: index,
-        total: total,
-        phase: 'start',
-        url: url,
-      );
-
       final attempt = await _buildCandidateOption(
         url,
         allowSocialAssetUrls: allowSocialAssetUrls,
@@ -278,15 +268,6 @@ class ImageLogoHelpers {
 
       completed += 1;
       onProgress?.call(completed, total);
-
-      _logCandidate(
-        index: index,
-        total: total,
-        phase: 'complete',
-        url: url,
-        reason: attempt.reason,
-        elapsedMs: attemptStopwatch.elapsedMilliseconds,
-      );
 
       if (attempt.option != null) {
         results.add(attempt.option!);
@@ -429,96 +410,6 @@ class ImageLogoHelpers {
     );
   }
 
-  static void _logCandidate({
-    required int index,
-    required int total,
-    required String phase,
-    required String url,
-    String? reason,
-    int? elapsedMs,
-  }) {
-    if (!_enablePerIndexLogging) {
-      return;
-    }
-
-    final reasonText = reason == null ? '' : ', reason=$reason';
-    final elapsedText = elapsedMs == null ? '' : ', elapsed=${elapsedMs}ms';
-    developer.log(
-      '[image-check ${index + 1}/$total] $phase$reasonText$elapsedText, url=$url',
-      name: 'ImageLogoHelpers',
-    );
-  }
-
-  static void _logLogoUrls({
-    required String source,
-    required List<String> urls,
-  }) {
-    if (!_enablePerIndexLogging) {
-      return;
-    }
-
-    for (var index = 0; index < urls.length; index++) {
-      developer.log(
-        '[logo-url ${index + 1}/${urls.length}] source=$source, url=${urls[index]}',
-        name: 'ImageLogoHelpers',
-      );
-    }
-  }
-
-  static void _logSourceUris({
-    required String source,
-    required Iterable<Uri> uris,
-  }) {
-    if (!_enablePerIndexLogging) {
-      return;
-    }
-
-    final uriList = uris.toList();
-    for (var index = 0; index < uriList.length; index++) {
-      developer.log(
-        '[source-uri ${index + 1}/${uriList.length}] source=$source, uri=${_redactSensitiveUri(uriList[index])}',
-        name: 'ImageLogoHelpers',
-      );
-    }
-  }
-
-  static Uri _redactSensitiveUri(Uri uri) {
-    if (!uri.queryParameters.containsKey('token')) {
-      return uri;
-    }
-
-    final redactedQuery = <String, String>{
-      for (final entry in uri.queryParameters.entries)
-        entry.key: entry.key == 'token' ? 'REDACTED' : entry.value,
-    };
-
-    return uri.replace(queryParameters: redactedQuery);
-  }
-
-  static void _logWebsiteProviderStatus({
-    required String provider,
-    required Uri? uri,
-    required bool enabled,
-    required List<String> rankedUrls,
-    required List<String> selectedUrls,
-    String? disabledReason,
-  }) {
-    if (!_enablePerIndexLogging) {
-      return;
-    }
-
-    final redactedUri = uri == null ? null : _redactSensitiveUri(uri);
-    final inRanked = uri != null && rankedUrls.contains(uri.toString());
-    final inSelected = uri != null && selectedUrls.contains(uri.toString());
-
-    developer.log(
-      '[website-provider] provider=$provider, enabled=$enabled, '
-      'ranked=$inRanked, selected=$inSelected, '
-      'reason=${disabledReason ?? 'n/a'}, uri=${redactedUri ?? 'n/a'}',
-      name: 'ImageLogoHelpers',
-    );
-  }
-
   static List<CompanyImageOption> mergeImageOptions(
     List<CompanyImageOption> primary,
     List<CompanyImageOption> additional,
@@ -587,7 +478,6 @@ class ImageLogoHelpers {
         Uri.parse('https://logos-api.apistemic.com/domain:$domainForLogoApi');
     discoveredUrls.add(apistemicUri.toString());
     providerUris.add(apistemicUri);
-    _logSourceUris(source: 'website-provider', uris: providerUris);
 
     for (final websiteUri in websiteUris) {
       discoveredUrls.addAll(websiteUri.buildCommonImageAssetUrls());
@@ -632,22 +522,6 @@ class ImageLogoHelpers {
       rankedUrls,
       providerUris,
     );
-    _logWebsiteProviderStatus(
-      provider: 'logokit',
-      uri: logokitLogoUri,
-      enabled: logokitLogoUri != null,
-      rankedUrls: rankedUrls,
-      selectedUrls: result,
-      disabledReason: logokitLogoUri == null ? 'missing-api-key' : null,
-    );
-    _logWebsiteProviderStatus(
-      provider: 'apistemic',
-      uri: apistemicUri,
-      enabled: true,
-      rankedUrls: rankedUrls,
-      selectedUrls: result,
-    );
-    _logLogoUrls(source: 'website', urls: result);
     return result;
   }
 
@@ -662,8 +536,6 @@ class ImageLogoHelpers {
     if (pageUris.isEmpty) {
       return [];
     }
-
-    _logSourceUris(source: 'logos-world-page', uris: pageUris);
 
     final companyTokens = companyName.extractCompanyTokens();
     final allowSocialAssetUrls = _allowsSocialAssetUrlsForCompany(companyName);
@@ -711,7 +583,6 @@ class ImageLogoHelpers {
       allowSocialAssetUrls: allowSocialAssetUrls,
     );
     final result = ranked.take(12).toList();
-    _logLogoUrls(source: 'logos-world', urls: result);
     return result;
   }
 
@@ -797,7 +668,6 @@ class ImageLogoHelpers {
       allowSocialAssetUrls: true,
     );
     final result = ranked.take(12).toList();
-    _logLogoUrls(source: 'social', urls: result);
     return result;
   }
 

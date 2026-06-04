@@ -1,5 +1,3 @@
-import 'dart:developer' as developer;
-
 import 'package:contact_photos/helpers/image_logo_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
 import 'package:flutter/material.dart';
@@ -78,16 +76,7 @@ class SearchHelpers {
       );
       hasSearchedWebsite.value = true;
 
-      developer.log(
-        'Website validation produced ${imageOptions.value.length} renderable image(s).',
-        name: 'SearchHelpers',
-      );
-
       if (imageOptions.value.length <= 3) {
-        developer.log(
-          'Triggering logos-world fallback because only ${imageOptions.value.length} renderable image(s) were found from the website.',
-          name: 'SearchHelpers',
-        );
         progressValue.value = null;
         progressLabel.value =
             'Auto fallback: collecting additional candidates...';
@@ -117,18 +106,9 @@ class SearchHelpers {
             logosWorldOptions,
           );
         }
-      } else {
-        developer.log(
-          'Skipping logos-world fallback because website validation already found ${imageOptions.value.length} renderable image(s).',
-          name: 'SearchHelpers',
-        );
       }
 
       if (imageOptions.value.length <= 3) {
-        developer.log(
-          'Triggering social fallback because only ${imageOptions.value.length} renderable image(s) are available after website/logos-world checks.',
-          name: 'SearchHelpers',
-        );
         progressValue.value = null;
         progressLabel.value = 'Auto fallback: collecting more candidates...';
 
