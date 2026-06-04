@@ -12,6 +12,7 @@ import 'package:liquid_glass_widgets/liquid_glass_setup.dart';
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
   await Firebase.initializeApp();
+  await PreferencesService.syncFromFirestoreIfNeeded();
   await LiquidGlassWidgets.initialize();
   PurchaseService.instance.initialize();
   runApp(LiquidGlassWidgets.wrap(
