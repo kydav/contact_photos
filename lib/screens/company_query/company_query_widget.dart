@@ -1,8 +1,10 @@
+import 'dart:async';
 import 'dart:math' as math;
 
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/screens/company_query/edit_company_name_dialog.dart';
 import 'package:contact_photos/screens/company_query/manual_company_dialog.dart';
+import 'package:contact_photos/services/analytics_service.dart';
 import 'package:contact_photos/services/hybrid_company_search_service.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -34,6 +36,7 @@ class CompanyQueryWidget extends HookWidget {
         return;
       }
 
+      unawaited(AnalyticsService.searchPageSearched(name: query));
       isLoading.value = true;
       hasSearched.value = true;
       errorText.value = null;
@@ -143,7 +146,15 @@ class CompanyQueryWidget extends HookWidget {
                                 lightAngle: 0.75 * math.pi,
                                 glassColor: Colors.blue.withValues(alpha: 0.1),
                               ),
-                              onTap: () => onCompanySelected(company),
+                              onTap: () {
+                              unawaited(
+                                AnalyticsService.searchPageSelectedCompanyResult(
+                                  name: company.name,
+                                  url: company.websiteUrl,
+                                ),
+                              );
+                              onCompanySelected(company);
+                            },
                             ),
                           ],
                         ),
@@ -160,6 +171,8 @@ class CompanyQueryWidget extends HookWidget {
                   const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20),
               child: GlassButton.custom(
                 onTap: () async {
+                  unawaited(
+                      AnalyticsService.searchPageEnteredManualUrlButtonTapped());
                   final selected =
                       await showModalBottomSheet<CompanySearchResult>(
                     context: context,
@@ -171,7 +184,12 @@ class CompanyQueryWidget extends HookWidget {
                   );
 
                   if (selected != null) {
+                    unawaited(AnalyticsService.searchPageEnteredManualUrlDialogSaved(
+                        url: selected.websiteUrl));
                     onCompanySelected(selected);
+                  } else {
+                    unawaited(
+                        AnalyticsService.searchPageEnteredManualUrlDialogClosed());
                   }
                 },
                 shape: const LiquidRoundedRectangle(borderRadius: 40),

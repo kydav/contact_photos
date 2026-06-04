@@ -5,6 +5,7 @@ import 'package:contact_photos/models/company_image_option.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:contact_photos/screens/contact_creation_page/update_name_dialog.dart';
 import 'package:contact_photos/screens/paywall/paywall_screen.dart';
+import 'package:contact_photos/services/analytics_service.dart';
 import 'package:contact_photos/services/contacts_service.dart';
 import 'package:contact_photos/services/preferences_service.dart';
 import 'package:flutter/foundation.dart';
@@ -226,6 +227,7 @@ class ContactCreationPage extends HookWidget {
         return;
       }
 
+      unawaited(AnalyticsService.creationPageCropTapped());
       isCropping.value = true;
       localError.value = null;
       try {
@@ -248,12 +250,16 @@ class ContactCreationPage extends HookWidget {
         return;
       }
 
+      unawaited(AnalyticsService.creationPageCreateContactButtonTapped(
+          successful: false));
+
       // Paywall gate: check entitlement before creating the contact.
       final isUnlocked = await PreferencesService.isPurchaseUnlocked();
       if (!isUnlocked) {
         final count = await PreferencesService.getContactsCreated();
         if (count >= 3) {
           if (!context.mounted) return;
+          unawaited(AnalyticsService.creationPagePaywallDialogShown());
           final unlocked = await PaywallScreen.show(context);
           if (unlocked != true) {
             return;
@@ -273,6 +279,8 @@ class ContactCreationPage extends HookWidget {
           photoAlreadyAdjusted: wasCropped.value || hasTransparentBackground,
         );
         await PreferencesService.incrementContactsCreated();
+        unawaited(AnalyticsService.creationPageCreateContactButtonTapped(
+            successful: true));
         if (!context.mounted) return;
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('Created contact for ${contactName.value}.')),
@@ -322,6 +330,8 @@ class ContactCreationPage extends HookWidget {
                     child: GlassButton(
                       enabled: !isSaving.value,
                       onTap: () async {
+                        unawaited(
+                            AnalyticsService.creationPageEditContactNameTapped());
                         final updatedName = await showModalBottomSheet<String>(
                           context: context,
                           backgroundColor: Colors.transparent,
@@ -331,6 +341,9 @@ class ContactCreationPage extends HookWidget {
                         );
 
                         if (updatedName != null && updatedName.isNotEmpty) {
+                          unawaited(AnalyticsService
+                              .creationPageEditContactNameDialogSaved(
+                                  name: updatedName));
                           contactName.value = updatedName;
                         }
                       },
