@@ -267,6 +267,7 @@ class ContactCreationPage extends HookWidget {
         await ContactsService.createContact(
           companyName: contactName.value,
           phoneNumber: phoneNumber,
+          url: company.websiteUrl,
           photoBytes: previewPhotoBytes,
           photoAlreadyAdjusted: wasCropped.value || hasTransparentBackground,
         );
