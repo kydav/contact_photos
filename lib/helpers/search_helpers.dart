@@ -1,5 +1,8 @@
+import 'dart:async';
+
 import 'package:contact_photos/helpers/image_logo_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
+import 'package:contact_photos/services/analytics_service.dart';
 import 'package:flutter/material.dart';
 
 class SearchHelpers {
@@ -150,6 +153,8 @@ class SearchHelpers {
     } catch (error) {
       errorText.value = 'Could not search company images: $error';
     } finally {
+      unawaited(AnalyticsService.imagePageQueriedImages(
+          count: imageOptions.value.length));
       isLoading.value = false;
     }
   }

@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 
+import 'package:contact_photos/services/analytics_service.dart';
 import 'package:contact_photos/services/purchase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
@@ -95,6 +96,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Future<void> _onUnlockPressed() async {
+    unawaited(AnalyticsService.creationPagePaywallUnlockTapped());
     setState(() {
       _isLoading = true;
       _statusMessage = null;
@@ -109,6 +111,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   }
 
   Future<void> _onRestorePressed() async {
+    unawaited(AnalyticsService.creationPagePaywallRestoreTapped());
     setState(() {
       _isLoading = true;
       _statusMessage = null;
@@ -174,7 +177,10 @@ class _PaywallScreenState extends State<PaywallScreen> {
             ],
             const SizedBox(height: 8),
             TextButton(
-              onPressed: () => Navigator.of(context).pop(false),
+              onPressed: () {
+                unawaited(AnalyticsService.creationPagePaywallDialogCancelTapped());
+                Navigator.of(context).pop(false);
+              },
               child: const Text('Cancel'),
             ),
           ],

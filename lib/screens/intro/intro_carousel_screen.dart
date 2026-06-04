@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:contact_photos/screens/intro/intro_slide.dart';
+import 'package:contact_photos/services/analytics_service.dart';
 import 'package:contact_photos/services/contacts_service.dart';
 import 'package:contact_photos/ui/background.dart';
 import 'package:flutter/material.dart';
@@ -38,6 +39,7 @@ class IntroCarouselScreen extends HookWidget {
 
     Future<void> handleNext() async {
       if (currentPage.value == 0) {
+        unawaited(AnalyticsService.introNextTapped());
         await pageController.nextPage(
           duration: const Duration(milliseconds: 250),
           curve: Curves.easeInOut,
@@ -51,6 +53,8 @@ class IntroCarouselScreen extends HookWidget {
       try {
         final permissionResult =
             await ContactsService.requestContactsPermission();
+        final granted = permissionResult == ContactsPermissionResult.granted;
+        unawaited(AnalyticsService.introFinishedIntro(allowedAccess: granted));
         switch (permissionResult) {
           case ContactsPermissionResult.granted:
             permissionMessage.value = 'Contacts access granted.';
