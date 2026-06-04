@@ -7,9 +7,9 @@ Use this document for every production release. Complete each section in order �
 ## 1. Code Readiness
 
 - [ ] All P0 and P1 issues resolved and merged to `main`
-- [ ] `flutter analyze --fatal-infos` passes locally
-- [ ] `flutter test` passes locally with no skipped tests
-- [ ] CI is green on `main` (analyze, test, and sanity jobs)
+- [x] `flutter analyze --fatal-infos` passes locally
+- [x] `flutter test` passes locally with no skipped tests
+- [x] CI is green on `main` (analyze, test, and sanity jobs)
 - [ ] No placeholder bundle identifiers (`com.example`) in iOS or Android config
 - [ ] `READ_SMS` (or any high-scrutiny permission) removed or policy-justified
 - [ ] Release signing configured for Android (not debug keys)
@@ -35,11 +35,13 @@ Use this document for every production release. Complete each section in order �
 ## 4. Build & Sign
 
 ### Android
+
 - [ ] `flutter build appbundle --release` succeeds
 - [ ] AAB signed with production keystore (not debug)
 - [ ] `bundletool` smoke-test: install on a physical device from the AAB
 
 ### iOS
+
 - [ ] `flutter build ipa --release` succeeds
 - [ ] IPA signed with App Store distribution certificate
 - [ ] Uploaded to App Store Connect via Xcode or Transporter
@@ -59,10 +61,10 @@ Use this document for every production release. Complete each section in order �
 
 All of the above must be checked **and** the following people have signed off:
 
-| Name | Role | Sign-off |
-|------|------|---------|
-| | Product | ☐ |
-| | Engineering | ☐ |
+| Name | Role        | Sign-off |
+| ---- | ----------- | -------- |
+|      | Product     | ☐        |
+|      | Engineering | ☐        |
 
 **Decision:** ☐ Go &nbsp;&nbsp; ☐ No-Go
 
