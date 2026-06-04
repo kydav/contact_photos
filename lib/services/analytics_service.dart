@@ -5,11 +5,11 @@ class AnalyticsService {
 
   // ── Intro ──────────────────────────────────────────────────────────────────
 
-  static Future<void> introNextTapped() =>
-      _log('intro_nextTapped');
+  static Future<void> introNextTapped() => _log('intro_nextTapped');
 
   static Future<void> introFinishedIntro({required bool allowedAccess}) =>
-      _log('intro_finishedIntro', p: {'allowed_access': allowedAccess});
+      _log('intro_finishedIntro',
+          p: {'allowed_access': allowedAccess.toString()});
 
   // ── Search page ────────────────────────────────────────────────────────────
 
@@ -68,7 +68,7 @@ class AnalyticsService {
     required bool successful,
   }) =>
       _log('creationPage_createContactButtonTapped',
-          p: {'successful': successful});
+          p: {'successful': successful.toString()});
 
   static Future<void> creationPagePaywallDialogShown() =>
       _log('creationPage_paywallDialogShown');
@@ -85,7 +85,6 @@ class AnalyticsService {
 
   // ── Internal ───────────────────────────────────────────────────────────────
 
-  static Future<void> _log(String name,
-      {Map<String, Object>? p}) =>
+  static Future<void> _log(String name, {Map<String, Object>? p}) =>
       _analytics.logEvent(name: name, parameters: p);
 }
