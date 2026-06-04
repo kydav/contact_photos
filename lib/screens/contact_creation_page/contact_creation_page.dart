@@ -142,7 +142,7 @@ class ContactCreationPage extends HookWidget {
   }
 
   static Future<Uint8List?> _cropWithImageCropper(Uint8List sourceBytes) async {
-    final isSupportedMobilePlatform = !kIsWeb &&
+    final isSupportedMobilePlatform =
         (defaultTargetPlatform == TargetPlatform.android ||
             defaultTargetPlatform == TargetPlatform.iOS);
     if (!isSupportedMobilePlatform) {

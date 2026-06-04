@@ -6,7 +6,6 @@ import 'package:contact_photos/services/preferences_service.dart';
 import 'package:contact_photos/services/purchase_service.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:liquid_glass_widgets/liquid_glass_setup.dart';
@@ -17,10 +16,8 @@ void main() {
       WidgetsFlutterBinding.ensureInitialized();
       await Firebase.initializeApp();
 
-      if (!kIsWeb) {
-        FlutterError.onError =
-            FirebaseCrashlytics.instance.recordFlutterFatalError;
-      }
+      FlutterError.onError =
+          FirebaseCrashlytics.instance.recordFlutterFatalError;
 
       await PreferencesService.syncFromFirestoreIfNeeded();
       await LiquidGlassWidgets.initialize();
@@ -31,9 +28,7 @@ void main() {
       ));
     },
     (error, stack) {
-      if (!kIsWeb) {
-        FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
-      }
+      FirebaseCrashlytics.instance.recordError(error, stack, fatal: true);
     },
   );
 }
