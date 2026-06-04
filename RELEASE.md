@@ -10,14 +10,14 @@ Use this document for every production release. Complete each section in order �
 - [x] `flutter analyze --fatal-infos` passes locally
 - [x] `flutter test` passes locally with no skipped tests
 - [x] CI is green on `main` (analyze, test, and sanity jobs)
-- [ ] No placeholder bundle identifiers (`com.example`) in iOS or Android config
-- [ ] `READ_SMS` (or any high-scrutiny permission) removed or policy-justified
+- [x] No placeholder bundle identifiers (`com.example`) in iOS or Android config
+- [x] `READ_SMS` (or any high-scrutiny permission) removed or policy-justified
 - [ ] Release signing configured for Android (not debug keys)
-- [ ] Firebase configs match the production project
+- [x] Firebase configs match the production project
 
 ## 2. Store Assets
 
-- [ ] App icon finalized (1024×1024 PNG for iOS, adaptive icon for Android)
+- [x] App icon finalized (1024×1024 PNG for iOS, adaptive icon for Android)
 - [ ] Screenshots captured for all required device sizes (iPhone, iPad, Android phone/tablet)
 - [ ] App Store Connect metadata complete (name, subtitle, description, keywords, category)
 - [ ] Google Play Console listing complete (title, short/full description, category, content rating)
