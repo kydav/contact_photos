@@ -1,8 +1,10 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:contact_photos/services/purchase_service.dart';
 import 'package:flutter/material.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
+import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 
 class PaywallScreen extends StatefulWidget {
   const PaywallScreen({super.key});
@@ -12,8 +14,18 @@ class PaywallScreen extends StatefulWidget {
   static Future<bool> show(BuildContext context) async {
     final result = await showModalBottomSheet<bool>(
       context: context,
+      backgroundColor: Colors.transparent,
       isScrollControlled: true,
-      builder: (_) => const PaywallScreen(),
+      builder: (_) => GlassSheet(
+          settings: LiquidGlassSettings(
+            blur: 12,
+            thickness: 5,
+            ambientStrength: 0.5,
+            lightIntensity: 0.6,
+            lightAngle: 0.75 * math.pi,
+            glassColor: Colors.white.withValues(alpha: 0.12),
+          ),
+          child: const PaywallScreen()),
     );
     return result ?? false;
   }
@@ -25,7 +37,7 @@ class PaywallScreen extends StatefulWidget {
 class _PaywallScreenState extends State<PaywallScreen> {
   bool _isLoading = false;
   String? _statusMessage;
-  String _priceLabel = r'$0.99';
+  String _priceLabel = r'$1.99';
   StreamSubscription<PurchaseDetails>? _purchaseSubscription;
 
   @override
@@ -91,8 +103,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
     if (!started && mounted) {
       setState(() {
         _isLoading = false;
-        _statusMessage =
-            'Product unavailable. Please try again later.';
+        _statusMessage = 'Product unavailable. Please try again later.';
       });
     }
   }
@@ -106,7 +117,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
     if (mounted) {
       setState(() {
         _isLoading = false;
-        _statusMessage = 'Restore complete. If you have a prior purchase it will be applied.';
+        _statusMessage =
+            'Restore complete. If you have a prior purchase it will be applied.';
       });
     }
   }
