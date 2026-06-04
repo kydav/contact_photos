@@ -14,6 +14,7 @@ dependencies:
   firebase_ai: ^3.9.0
   firebase_analytics: ^12.4.2
   firebase_core: ^4.2.0
+  firebase_crashlytics: ^5.2.3
   flutter:
     sdk: flutter
   flutter_contacts: ^2.0.2
