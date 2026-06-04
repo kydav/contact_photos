@@ -34,7 +34,7 @@ class PreferencesService {
   static Future<void> incrementContactsCreated() async {
     final newCount = await getContactsCreated() + 1;
     await _storage.write(key: _contactsCreatedKey, value: newCount.toString());
-    if (!kIsWeb && Platform.isAndroid) {
+    if (Platform.isAndroid) {
       unawaited(_backupToFirestore(contactsCreated: newCount));
     }
   }
@@ -52,7 +52,7 @@ class PreferencesService {
   /// after a reinstall, since EncryptedSharedPreferences is wiped on reinstall
   /// while ANDROID_ID (the Firestore key) is not.
   static Future<void> syncFromFirestoreIfNeeded() async {
-    if (kIsWeb || !Platform.isAndroid) return;
+    if (!Platform.isAndroid) return;
     try {
       final deviceId = await _androidDeviceId();
       final doc = await FirebaseFirestore.instance
