@@ -58,10 +58,25 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
 
       # ── Build ────────────────────────────────────────────────────────────────
-      - name: Build IPA
+      - name: Build iOS archive
         run: |
-          flutter build ipa --release \
-            --export-options-plist=ios/ExportOptions.plist
+          flutter build ios --release --no-codesign
+          xcodebuild archive \
+            -workspace ios/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            CODE_SIGN_STYLE=Manual \
+            CODE_SIGN_IDENTITY="Apple Distribution" \
+            PROVISIONING_PROFILE_SPECIFIER="Contact Photos App Store" \
+            DEVELOPMENT_TEAM=GMAMAXJ88G
+
+      - name: Export IPA
+        run: |
+          xcodebuild -exportArchive \
+            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
+            -exportOptionsPlist ios/ExportOptions.plist \
+            -exportPath "$RUNNER_TEMP/export"
 
       # ── Upload to TestFlight ─────────────────────────────────────────────────
       # Requires these GitHub repository secrets:
@@ -81,7 +96,7 @@ jobs:
 
           xcrun altool --upload-app \
             --type ios \
-            --file "$(find build/ios/ipa -name '*.ipa' | head -1)" \
+            --file "$(find $RUNNER_TEMP/export -name '*.ipa' | head -1)" \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" \
             --apiKeyPath "$API_KEY_PATH"
