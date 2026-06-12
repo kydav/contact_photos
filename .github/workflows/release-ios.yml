@@ -63,23 +63,16 @@ jobs:
           cp "$PP_PATH" ~/Library/MobileDevice/Provisioning\ Profiles/
 
       # ── Build ────────────────────────────────────────────────────────────────
-      - name: Build iOS archive
+      - name: Build and export IPA
         run: |
-          flutter build ios --release --no-codesign
-          xcodebuild archive \
-            -workspace ios/Runner.xcworkspace \
-            -scheme Runner \
-            -configuration Release \
-            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            CODE_SIGN_IDENTITY="Apple Distribution" \
-            DEVELOPMENT_TEAM=GMAMAXJ88G
-
-      - name: Export IPA
-        run: |
-          xcodebuild -exportArchive \
-            -archivePath "$RUNNER_TEMP/Runner.xcarchive" \
-            -exportOptionsPlist ios/ExportOptions.plist \
-            -exportPath "$RUNNER_TEMP/export"
+          flutter build ipa --release \
+            --export-options-plist=ios/ExportOptions.plist \
+            --verbose 2>&1 | tail -100
+          # Surface the full xcodebuild log on failure
+          if [ ${PIPESTATUS[0]} -ne 0 ]; then
+            find /var/folders -name '*.xcactivitylog' 2>/dev/null | sort -t/ -k7 -r | head -1 | xargs gunzip -c 2>/dev/null | strings | grep -A5 "error:" | head -80 || true
+            exit 1
+          fi
 
       # ── Upload to TestFlight ─────────────────────────────────────────────────
       # Requires these GitHub repository secrets:
@@ -99,7 +92,7 @@ jobs:
 
           xcrun altool --upload-app \
             --type ios \
-            --file "$(find $RUNNER_TEMP/export -name '*.ipa' | head -1)" \
+            --file "$(find build/ios/ipa -name '*.ipa' | head -1)" \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID" \
             --apiKeyPath "$API_KEY_PATH"
