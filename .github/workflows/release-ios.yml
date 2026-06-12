@@ -87,15 +87,15 @@ jobs:
           ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
           KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_KEY_BASE64 }}
         run: |
-          API_KEY_PATH=$RUNNER_TEMP/AuthKey.p8
-          echo -n "$KEY_BASE64" | base64 --decode -o "$API_KEY_PATH"
+          # altool ignores --apiKeyPath; must be in one of its hardcoded search paths
+          mkdir -p ~/.appstoreconnect/private_keys
+          echo -n "$KEY_BASE64" | base64 --decode -o ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
 
           xcrun altool --upload-app \
             --type ios \
             --file "$(find build/ios/ipa -name '*.ipa' | head -1)" \
             --apiKey "$KEY_ID" \
-            --apiIssuer "$ISSUER_ID" \
-            --apiKeyPath "$API_KEY_PATH"
+            --apiIssuer "$ISSUER_ID"
 
       # ── Cleanup ──────────────────────────────────────────────────────────────
       - name: Remove signing keychain
