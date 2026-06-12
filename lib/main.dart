@@ -75,6 +75,7 @@ class MyApp extends HookWidget {
 
     return MaterialApp(
       title: 'Contact Photos',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
         useMaterial3: true,

@@ -78,8 +78,10 @@ class CompanyImageQueryWidget extends HookWidget {
     final progressValue = useState<double?>(null);
     final progressLabel = useState<String?>(null);
 
-    final noImagesAfterAllLevels = useState(
-        hasSearchedWebsite.value && hasSearchedLogosWorld.value && hasSearchedSocial.value && imageOptions.value.isEmpty);
+    final noImagesAfterAllLevels = useState(hasSearchedWebsite.value &&
+        hasSearchedLogosWorld.value &&
+        hasSearchedSocial.value &&
+        imageOptions.value.isEmpty);
 
     Future<void> openLogoKitAttribution() async {
       await launchUrl(
@@ -90,20 +92,20 @@ class CompanyImageQueryWidget extends HookWidget {
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (companyName != null && companyWebsiteUrl != null) {
-          SearchHelpers().searchWebsiteImages(
-            companyName,
-            companyWebsiteUrl,
-            errorText,
-            imageOptions,
-            isLoading,
-            hasSearchedWebsite,
-            hasSearchedLogosWorld,
-            hasSearchedSocial,
-            progressValue,
-            progressLabel,
-          );
-        }
+        // if (companyName != null && companyWebsiteUrl != null) {
+        //   SearchHelpers().searchWebsiteImages(
+        //     companyName,
+        //     companyWebsiteUrl,
+        //     errorText,
+        //     imageOptions,
+        //     isLoading,
+        //     hasSearchedWebsite,
+        //     hasSearchedLogosWorld,
+        //     hasSearchedSocial,
+        //     progressValue,
+        //     progressLabel,
+        //   );
+        // }
         loadImages();
       });
       return null;
@@ -151,10 +153,13 @@ class CompanyImageQueryWidget extends HookWidget {
                       children: [
                         GridView.builder(
                           padding: EdgeInsets.only(
-                            bottom: hasSearchedWebsite.value && !isLoading.value ? 96 : 0,
+                            bottom: hasSearchedWebsite.value && !isLoading.value
+                                ? 96
+                                : 0,
                           ),
                           itemCount: imageOptions.value.length,
-                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate:
+                              SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: crossAxisCount,
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
@@ -181,14 +186,17 @@ class CompanyImageQueryWidget extends HookWidget {
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: Size.zero,
-                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                                          tapTargetSize:
+                                              MaterialTapTargetSize.shrinkWrap,
                                           foregroundColor: colorScheme.primary,
                                         ),
                                         child: Text(
                                           'Logo provided by LogoKit.com',
                                           textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodySmall?.copyWith(
-                                            decoration: TextDecoration.underline,
+                                          style: theme.textTheme.bodySmall
+                                              ?.copyWith(
+                                            decoration:
+                                                TextDecoration.underline,
                                           ),
                                         ),
                                       ),
@@ -211,7 +219,9 @@ class CompanyImageQueryWidget extends HookWidget {
                                           ),
                                         ),
                                         onTap: () {
-                                          unawaited(AnalyticsService.imagePageSelectedImage(imageUrl: imageOption.url));
+                                          unawaited(AnalyticsService
+                                              .imagePageSelectedImage(
+                                                  imageUrl: imageOption.url));
                                           onImageSelected(imageOption);
                                         },
                                       ),
