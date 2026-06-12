@@ -182,6 +182,7 @@ class ContactCreationPage extends HookWidget {
             title: 'Adjust Contact Image',
             aspectRatioLockEnabled: true,
             resetAspectRatioEnabled: false,
+            embedInNavigationController: true,
             cropStyle: CropStyle.circle),
       ],
     );
@@ -253,16 +254,19 @@ class ContactCreationPage extends HookWidget {
       unawaited(AnalyticsService.creationPageCreateContactButtonTapped(
           successful: false));
 
-      // Paywall gate: check entitlement before creating the contact.
-      final isUnlocked = await PreferencesService.isPurchaseUnlocked();
-      if (!isUnlocked) {
-        final count = await PreferencesService.getContactsCreated();
-        if (count >= 3) {
-          if (!context.mounted) return;
-          unawaited(AnalyticsService.creationPagePaywallDialogShown());
-          final unlocked = await PaywallScreen.show(context);
-          if (unlocked != true) {
-            return;
+      // Paywall gate: skipped when PAYWALL_ENABLED=false (beta builds).
+      const paywallEnabled = bool.fromEnvironment('PAYWALL_ENABLED', defaultValue: true);
+      if (paywallEnabled) {
+        final isUnlocked = await PreferencesService.isPurchaseUnlocked();
+        if (!isUnlocked) {
+          final count = await PreferencesService.getContactsCreated();
+          if (count >= 3) {
+            if (!context.mounted) return;
+            unawaited(AnalyticsService.creationPagePaywallDialogShown());
+            final unlocked = await PaywallScreen.show(context);
+            if (unlocked != true) {
+              return;
+            }
           }
         }
       }
@@ -330,8 +334,8 @@ class ContactCreationPage extends HookWidget {
                     child: GlassButton(
                       enabled: !isSaving.value,
                       onTap: () async {
-                        unawaited(
-                            AnalyticsService.creationPageEditContactNameTapped());
+                        unawaited(AnalyticsService
+                            .creationPageEditContactNameTapped());
                         final updatedName = await showModalBottomSheet<String>(
                           context: context,
                           backgroundColor: Colors.transparent,

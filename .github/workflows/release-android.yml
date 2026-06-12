@@ -5,6 +5,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      disable_paywall:
+        description: 'Disable paywall (for beta builds)'
+        type: boolean
+        default: false
 
 jobs:
   build:
@@ -44,10 +49,20 @@ jobs:
         run: flutter pub get
 
       - name: Build release AAB
-        run: flutter build appbundle --release
+        run: |
+          DART_DEFINES="--dart-define=LOGOKIT_API_KEY=${{ secrets.LOGOKIT_API_KEY }}"
+          if [ "${{ inputs.disable_paywall }}" = "true" ]; then
+            DART_DEFINES="$DART_DEFINES --dart-define=PAYWALL_ENABLED=false"
+          fi
+          flutter build appbundle --release $DART_DEFINES
 
       - name: Build release APK
-        run: flutter build apk --release
+        run: |
+          DART_DEFINES="--dart-define=LOGOKIT_API_KEY=${{ secrets.LOGOKIT_API_KEY }}"
+          if [ "${{ inputs.disable_paywall }}" = "true" ]; then
+            DART_DEFINES="$DART_DEFINES --dart-define=PAYWALL_ENABLED=false"
+          fi
+          flutter build apk --release $DART_DEFINES
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
@@ -60,3 +75,11 @@ jobs:
         with:
           name: release-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+
+      - name: Upload to Google Play (internal)
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: app.auaha.contactphotos
+          releaseFiles: build/app/outputs/bundle/release/app-release.aab
+          track: internal

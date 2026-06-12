@@ -7,6 +7,11 @@ on:
     tags:
       - 'v*'
   workflow_dispatch:
+    inputs:
+      disable_paywall:
+        description: 'Disable paywall (for beta builds)'
+        type: boolean
+        default: false
 
 jobs:
   deploy:
@@ -69,8 +74,13 @@ jobs:
       # ── Build ────────────────────────────────────────────────────────────────
       - name: Build and export IPA
         run: |
+          DART_DEFINES="--dart-define=LOGOKIT_API_KEY=${{ secrets.LOGOKIT_API_KEY }}"
+          if [ "${{ inputs.disable_paywall }}" = "true" ]; then
+            DART_DEFINES="$DART_DEFINES --dart-define=PAYWALL_ENABLED=false"
+          fi
           flutter build ipa --release \
             --export-options-plist=ios/ExportOptions.plist \
+            $DART_DEFINES \
             --verbose 2>&1 | tail -100
           # Surface the full xcodebuild log on failure
           if [ ${PIPESTATUS[0]} -ne 0 ]; then
