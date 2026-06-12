@@ -53,6 +53,17 @@ class CompanyQueryWidget extends HookWidget {
       }
     }
 
+    companies.value = [
+      CompanySearchResult(
+        name: 'Greenway Pharmacy',
+        websiteUrl: 'https://www.greenwaypharmacy.com',
+      ),
+      CompanySearchResult(
+        name: 'Greenway',
+        websiteUrl: 'https://www.greenway.com',
+      ),
+    ];
+
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 5.0),
       child: Column(
@@ -70,18 +81,14 @@ class CompanyQueryWidget extends HookWidget {
               ),
             ),
           ]),
-          if (isLoading.value) ...[
-            const Center(child: GlassProgressIndicator.linear())
-          ],
+          if (isLoading.value) ...[const Center(child: GlassProgressIndicator.linear())],
           if (errorText.value != null) ...[
             Text(
               errorText.value!,
               style: TextStyle(color: Theme.of(context).colorScheme.error),
             ),
           ],
-          if (hasSearched.value &&
-              companies.value.isEmpty &&
-              !isLoading.value) ...[
+          if (hasSearched.value && companies.value.isEmpty && !isLoading.value) ...[
             const Text('No companies matched your query.'),
           ],
           if (companies.value.isNotEmpty) ...[
@@ -98,8 +105,7 @@ class CompanyQueryWidget extends HookWidget {
                     return GlassCard(
                       shape: const LiquidRoundedRectangle(borderRadius: 20),
                       child: ListTile(
-                        contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 1, vertical: 2),
+                        contentPadding: const EdgeInsets.symmetric(horizontal: 1, vertical: 2),
                         title: Text(company.name),
                         subtitle: Text(company.websiteUrl),
                         trailing: Row(
@@ -119,8 +125,7 @@ class CompanyQueryWidget extends HookWidget {
                                 glassColor: Colors.blue.withValues(alpha: 0.1),
                               ),
                               onTap: () async {
-                                final newCompany =
-                                    await showDialog<CompanySearchResult>(
+                                final newCompany = await showDialog<CompanySearchResult>(
                                   context: context,
                                   builder: (context) {
                                     return EditCompanyNameDialog(
@@ -147,14 +152,14 @@ class CompanyQueryWidget extends HookWidget {
                                 glassColor: Colors.blue.withValues(alpha: 0.1),
                               ),
                               onTap: () {
-                              unawaited(
-                                AnalyticsService.searchPageSelectedCompanyResult(
-                                  name: company.name,
-                                  url: company.websiteUrl,
-                                ),
-                              );
-                              onCompanySelected(company);
-                            },
+                                unawaited(
+                                  AnalyticsService.searchPageSelectedCompanyResult(
+                                    name: company.name,
+                                    url: company.websiteUrl,
+                                  ),
+                                );
+                                onCompanySelected(company);
+                              },
                             ),
                           ],
                         ),
@@ -167,14 +172,11 @@ class CompanyQueryWidget extends HookWidget {
           ],
           if (hasSearched.value && !isLoading.value) ...[
             Padding(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20),
               child: GlassButton.custom(
                 onTap: () async {
-                  unawaited(
-                      AnalyticsService.searchPageEnteredManualUrlButtonTapped());
-                  final selected =
-                      await showModalBottomSheet<CompanySearchResult>(
+                  unawaited(AnalyticsService.searchPageEnteredManualUrlButtonTapped());
+                  final selected = await showModalBottomSheet<CompanySearchResult>(
                     context: context,
                     backgroundColor: Colors.transparent,
                     isScrollControlled: true,
@@ -184,12 +186,10 @@ class CompanyQueryWidget extends HookWidget {
                   );
 
                   if (selected != null) {
-                    unawaited(AnalyticsService.searchPageEnteredManualUrlDialogSaved(
-                        url: selected.websiteUrl));
+                    unawaited(AnalyticsService.searchPageEnteredManualUrlDialogSaved(url: selected.websiteUrl));
                     onCompanySelected(selected);
                   } else {
-                    unawaited(
-                        AnalyticsService.searchPageEnteredManualUrlDialogClosed());
+                    unawaited(AnalyticsService.searchPageEnteredManualUrlDialogClosed());
                   }
                 },
                 shape: const LiquidRoundedRectangle(borderRadius: 40),

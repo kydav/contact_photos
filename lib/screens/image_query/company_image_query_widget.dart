@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:contact_photos/helpers/search_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
@@ -7,6 +8,7 @@ import 'package:contact_photos/screens/image_query/image_query_card.dart';
 import 'package:contact_photos/screens/image_query/manual_image_dialog.dart';
 import 'package:contact_photos/services/analytics_service.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:liquid_glass_widgets/liquid_glass_widgets.dart';
 import 'package:url_launcher/url_launcher.dart';
@@ -29,6 +31,41 @@ class CompanyImageQueryWidget extends HookWidget {
   final CompanyImageSelectedCallback onImageSelected;
   final ValueNotifier<List<CompanyImageOption>> imageOptions;
 
+  Future<void> loadImages() async {
+    final image1 = await rootBundle.load('assets/1.png');
+    final image2 = await rootBundle.load('assets/2.png');
+    final image3 = await rootBundle.load('assets/3.png');
+    final image4 = await rootBundle.load('assets/4.png');
+    final image5 = await rootBundle.load('assets/5.png');
+    final image6 = await rootBundle.load('assets/6.png');
+    imageOptions.value = [
+      CompanyImageOption(
+        url: 'https://example.com/image1.png',
+        bytes: image1.buffer.asUint8List(),
+      ),
+      CompanyImageOption(
+        url: 'https://example.com/image2.png',
+        bytes: image2.buffer.asUint8List(),
+      ),
+      CompanyImageOption(
+        url: 'https://example.com/image3.png',
+        bytes: image3.buffer.asUint8List(),
+      ),
+      CompanyImageOption(
+        url: 'https://example.com/image4.png',
+        bytes: image4.buffer.asUint8List(),
+      ),
+      CompanyImageOption(
+        url: 'https://example.com/image5.png',
+        bytes: image5.buffer.asUint8List(),
+      ),
+      CompanyImageOption(
+        url: 'https://example.com/image6.png',
+        bytes: image6.buffer.asUint8List(),
+      ),
+    ];
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -41,10 +78,8 @@ class CompanyImageQueryWidget extends HookWidget {
     final progressValue = useState<double?>(null);
     final progressLabel = useState<String?>(null);
 
-    final noImagesAfterAllLevels = useState(hasSearchedWebsite.value &&
-        hasSearchedLogosWorld.value &&
-        hasSearchedSocial.value &&
-        imageOptions.value.isEmpty);
+    final noImagesAfterAllLevels = useState(
+        hasSearchedWebsite.value && hasSearchedLogosWorld.value && hasSearchedSocial.value && imageOptions.value.isEmpty);
 
     Future<void> openLogoKitAttribution() async {
       await launchUrl(
@@ -69,6 +104,7 @@ class CompanyImageQueryWidget extends HookWidget {
             progressLabel,
           );
         }
+        loadImages();
       });
       return null;
     }, [imageOptions, companyName, companyWebsiteUrl]);
@@ -115,13 +151,10 @@ class CompanyImageQueryWidget extends HookWidget {
                       children: [
                         GridView.builder(
                           padding: EdgeInsets.only(
-                            bottom: hasSearchedWebsite.value && !isLoading.value
-                                ? 96
-                                : 0,
+                            bottom: hasSearchedWebsite.value && !isLoading.value ? 96 : 0,
                           ),
                           itemCount: imageOptions.value.length,
-                          gridDelegate:
-                              SliverGridDelegateWithFixedCrossAxisCount(
+                          gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                             crossAxisCount: crossAxisCount,
                             mainAxisSpacing: 12,
                             crossAxisSpacing: 12,
@@ -148,17 +181,14 @@ class CompanyImageQueryWidget extends HookWidget {
                                         style: TextButton.styleFrom(
                                           padding: EdgeInsets.zero,
                                           minimumSize: Size.zero,
-                                          tapTargetSize:
-                                              MaterialTapTargetSize.shrinkWrap,
+                                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                                           foregroundColor: colorScheme.primary,
                                         ),
                                         child: Text(
                                           'Logo provided by LogoKit.com',
                                           textAlign: TextAlign.center,
-                                          style: theme.textTheme.bodySmall
-                                              ?.copyWith(
-                                            decoration:
-                                                TextDecoration.underline,
+                                          style: theme.textTheme.bodySmall?.copyWith(
+                                            decoration: TextDecoration.underline,
                                           ),
                                         ),
                                       ),
@@ -181,9 +211,7 @@ class CompanyImageQueryWidget extends HookWidget {
                                           ),
                                         ),
                                         onTap: () {
-                                          unawaited(AnalyticsService
-                                              .imagePageSelectedImage(
-                                                  imageUrl: imageOption.url));
+                                          unawaited(AnalyticsService.imagePageSelectedImage(imageUrl: imageOption.url));
                                           onImageSelected(imageOption);
                                         },
                                       ),
