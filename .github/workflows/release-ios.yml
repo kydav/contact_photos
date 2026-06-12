@@ -91,9 +91,13 @@ jobs:
           mkdir -p ~/.appstoreconnect/private_keys
           echo -n "$KEY_BASE64" | base64 --decode -o ~/.appstoreconnect/private_keys/AuthKey_${KEY_ID}.p8
 
+          IPA_PATH=$(find build -name '*.ipa' | head -1)
+          echo "IPA found at: $IPA_PATH"
+          if [ -z "$IPA_PATH" ]; then echo "ERROR: no IPA found"; find build -type f | head -30; exit 1; fi
+
           xcrun altool --upload-app \
             --type ios \
-            --file "$(find build/ios/ipa -name '*.ipa' | head -1)" \
+            --file "$IPA_PATH" \
             --apiKey "$KEY_ID" \
             --apiIssuer "$ISSUER_ID"
 
