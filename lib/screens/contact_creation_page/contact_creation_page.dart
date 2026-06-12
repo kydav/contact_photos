@@ -255,7 +255,8 @@ class ContactCreationPage extends HookWidget {
           successful: false));
 
       // Paywall gate: skipped when PAYWALL_ENABLED=false (beta builds).
-      const paywallEnabled = bool.fromEnvironment('PAYWALL_ENABLED', defaultValue: true);
+      const paywallEnabled =
+          bool.fromEnvironment('PAYWALL_ENABLED', defaultValue: true);
       if (paywallEnabled) {
         final isUnlocked = await PreferencesService.isPurchaseUnlocked();
         if (!isUnlocked) {
