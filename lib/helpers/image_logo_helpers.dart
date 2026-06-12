@@ -525,6 +525,66 @@ class ImageLogoHelpers {
     return result;
   }
 
+  static final _emailRegex = RegExp(
+    r'[a-zA-Z0-9._%+\-]+@[a-zA-Z0-9.\-]+\.[a-zA-Z]{2,}',
+  );
+
+  static final _emailBlocklist = RegExp(
+    r'\.(png|jpg|jpeg|gif|svg|webp|ico)$|'
+    r'(noreply|no-reply|donotreply|example|sentry|@sentry\.|wixpress|squarespace)',
+    caseSensitive: false,
+  );
+
+  static String? extractEmailFromHtml(String html) {
+    // mailto: links are the most reliable signal
+    final mailtoMatch =
+        RegExp(r'mailto:([^"<>\s&]+)', caseSensitive: false).firstMatch(html);
+    if (mailtoMatch != null) {
+      final candidate = mailtoMatch.group(1)!;
+      if (_emailRegex.hasMatch(candidate) &&
+          !_emailBlocklist.hasMatch(candidate)) {
+        return candidate;
+      }
+    }
+
+    final candidates = _emailRegex
+        .allMatches(html)
+        .map((m) => m.group(0)!)
+        .where((e) => !_emailBlocklist.hasMatch(e))
+        .toList();
+
+    const preferred = [
+      'contact@',
+      'info@',
+      'hello@',
+      'support@',
+      'team@',
+      'admin@',
+    ];
+    for (final prefix in preferred) {
+      final match = candidates.firstWhere(
+        (e) => e.toLowerCase().startsWith(prefix),
+        orElse: () => '',
+      );
+      if (match.isNotEmpty) return match;
+    }
+
+    return candidates.firstOrNull;
+  }
+
+  static Future<String?> queryEmailFromWebsite(String websiteUrl) async {
+    final baseUri = websiteUrl.normalizeWebsiteUri();
+    if (baseUri == null) return null;
+
+    for (final uri in baseUri.buildWebsiteCandidates()) {
+      final response = await uri.tryGet();
+      if (response == null || !response.looksLikeHtml()) continue;
+      final email = extractEmailFromHtml(response.body);
+      if (email != null) return email;
+    }
+    return null;
+  }
+
   static Future<List<String>> queryImageUrlsFromLogosWorld({
     required String companyName,
     required String companyWebsiteUrl,
