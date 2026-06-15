@@ -27,7 +27,6 @@ class ContactsService {
     required String companyName,
     required String phoneNumber,
     String url = '',
-    String? email,
     Uint8List? photoBytes,
     bool photoAlreadyAdjusted = false,
   }) async {
@@ -46,7 +45,6 @@ class ContactsService {
     final contact = Contact(
       name: Name(first: companyName),
       phones: [Phone(number: phoneNumber)],
-      emails: email != null && email.isNotEmpty ? [Email(address: email)] : [],
       websites: [Website(url: url, label: const Label(WebsiteLabel.homepage))],
       photo: optimizedPhotoBytes == null
           ? null

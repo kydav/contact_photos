@@ -197,11 +197,6 @@ class ContactCreationPage extends HookWidget {
   @override
   Widget build(BuildContext context) {
     final phoneController = useTextEditingController();
-    final emailController = useTextEditingController();
-    useEffect(() {
-      if (company.email != null) emailController.text = company.email!;
-      return null;
-    }, []);
     final isSaving = useState(false);
     final isCropping = useState(false);
     final localError = useState<String?>(null);
@@ -285,9 +280,6 @@ class ContactCreationPage extends HookWidget {
           companyName: contactName.value,
           phoneNumber: phoneNumber,
           url: company.websiteUrl,
-          email: emailController.text.trim().isEmpty
-              ? null
-              : emailController.text.trim(),
           photoBytes: previewPhotoBytes,
           photoAlreadyAdjusted: wasCropped.value || hasTransparentBackground,
         );
@@ -445,12 +437,6 @@ class ContactCreationPage extends HookWidget {
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
             ],
-          ),
-          const SizedBox(height: 8),
-          GlassTextField(
-            controller: emailController,
-            keyboardType: TextInputType.emailAddress,
-            placeholder: 'Email address (optional)',
           ),
           if (localError.value != null) ...[
             const SizedBox(height: 8),

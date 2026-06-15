@@ -107,10 +107,6 @@ class HomePage extends HookWidget {
                   companyName: selectedCompany.value?.name,
                   companyWebsiteUrl: selectedCompany.value?.websiteUrl,
                   imageOptions: imageOptions,
-                  onEmailDiscovered: (email) {
-                    selectedCompany.value =
-                        selectedCompany.value?.copyWith(email: email);
-                  },
                   onImageSelected: (imageOption) {
                     selectedImage.value = imageOption;
                     unawaited(goToPage(2));
