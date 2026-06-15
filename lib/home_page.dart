@@ -24,6 +24,7 @@ class HomePage extends HookWidget {
     final resetSeed = useState(0);
     final imageStepSeed = useState(0);
     final imageOptions = useState<List<CompanyImageOption>>([]);
+    final imageSearchGuard = useState(false);
 
     useEffect(() {
       void listener() {
@@ -51,6 +52,7 @@ class HomePage extends HookWidget {
       selectedImage.value = null;
       resetSeed.value = resetSeed.value + 1;
       imageOptions.value = [];
+      imageSearchGuard.value = false;
       await goToPage(0);
     }
 
@@ -94,6 +96,7 @@ class HomePage extends HookWidget {
                     selectedCompany.value = company;
                     selectedImage.value = null;
                     imageOptions.value = [];
+                    imageSearchGuard.value = false;
                     imageStepSeed.value = imageStepSeed.value + 1;
                     unawaited(goToPage(1));
                   },
@@ -107,6 +110,7 @@ class HomePage extends HookWidget {
                   companyName: selectedCompany.value?.name,
                   companyWebsiteUrl: selectedCompany.value?.websiteUrl,
                   imageOptions: imageOptions,
+                  searchGuard: imageSearchGuard,
                   onEmailDiscovered: (email) {
                     selectedCompany.value =
                         selectedCompany.value?.copyWith(email: email);

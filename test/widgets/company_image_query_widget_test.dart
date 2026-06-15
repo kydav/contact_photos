@@ -29,6 +29,7 @@ void main() {
               companyName: null,
               companyWebsiteUrl: null,
               imageOptions: imageOptions,
+              searchGuard: ValueNotifier(false),
               onImageSelected: (_) {},
             ),
           ),
