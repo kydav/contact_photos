@@ -40,6 +40,7 @@ class _PaywallScreenState extends State<PaywallScreen> {
   String? _statusMessage;
   String _priceLabel = r'$1.99';
   StreamSubscription<PurchaseDetails>? _purchaseSubscription;
+  StreamSubscription<String>? _streamErrorSubscription;
 
   @override
   void initState() {
@@ -48,11 +49,20 @@ class _PaywallScreenState extends State<PaywallScreen> {
     _purchaseSubscription = PurchaseService.instance.purchaseStream.listen(
       _onPurchaseUpdate,
     );
+    _streamErrorSubscription =
+        PurchaseService.instance.streamErrorStream.listen((message) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+        _statusMessage = message;
+      });
+    });
   }
 
   @override
   void dispose() {
     _purchaseSubscription?.cancel();
+    _streamErrorSubscription?.cancel();
     super.dispose();
   }
 
@@ -116,12 +126,14 @@ class _PaywallScreenState extends State<PaywallScreen> {
       _isLoading = true;
       _statusMessage = null;
     });
-    await PurchaseService.instance.restorePurchases();
-    if (mounted) {
+    final wasRestored = await PurchaseService.instance.restorePurchases();
+    // If a purchase was restored, _onPurchaseUpdate already popped the sheet.
+    if (mounted && _isLoading) {
       setState(() {
         _isLoading = false;
-        _statusMessage =
-            'Restore complete. If you have a prior purchase it will be applied.';
+        _statusMessage = wasRestored
+            ? 'Purchase restored successfully!'
+            : 'No previous purchase found for this Apple ID.';
       });
     }
   }

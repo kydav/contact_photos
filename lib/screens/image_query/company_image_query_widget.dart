@@ -23,6 +23,7 @@ class CompanyImageQueryWidget extends HookWidget {
     required this.companyWebsiteUrl,
     required this.onImageSelected,
     required this.imageOptions,
+    required this.searchGuard,
     super.key,
   });
 
@@ -66,6 +67,10 @@ class CompanyImageQueryWidget extends HookWidget {
     ];
   }
 
+  /// Lifted to HomePage so it survives page unmount/remount. True means the
+  /// search already ran for the current company — don't re-query on remount.
+  final ValueNotifier<bool> searchGuard;
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -107,6 +112,23 @@ class CompanyImageQueryWidget extends HookWidget {
         //   );
         // }
         loadImages();
+        if (companyName != null &&
+            companyWebsiteUrl != null &&
+            !searchGuard.value) {
+          searchGuard.value = true;
+          SearchHelpers().searchWebsiteImages(
+            companyName,
+            companyWebsiteUrl,
+            errorText,
+            imageOptions,
+            isLoading,
+            hasSearchedWebsite,
+            hasSearchedLogosWorld,
+            hasSearchedSocial,
+            progressValue,
+            progressLabel,
+          );
+        }
       });
       return null;
     }, [imageOptions, companyName, companyWebsiteUrl]);
@@ -205,7 +227,10 @@ class CompanyImageQueryWidget extends HookWidget {
                                     Visibility(
                                       visible: !isLoading.value,
                                       child: GlassButton(
-                                        icon: const Icon(Icons.check),
+                                        icon: Icon(Icons.check,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface),
                                         label: 'Done',
                                         height: 50,
                                         width: 50,

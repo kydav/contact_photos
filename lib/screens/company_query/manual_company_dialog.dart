@@ -32,7 +32,6 @@ class ManualCompanyDialog extends HookWidget {
             const Text(
               'Enter Company URL',
               style: TextStyle(
-                color: Colors.white,
                 fontSize: 20,
                 fontWeight: FontWeight.w700,
               ),
@@ -43,6 +42,9 @@ class ManualCompanyDialog extends HookWidget {
               keyboardType: TextInputType.url,
               textInputAction: TextInputAction.done,
               shape: const LiquidRoundedRectangle(borderRadius: 40),
+              textStyle: TextStyle(
+                color: Theme.of(context).colorScheme.onSurface,
+              ),
               settings: LiquidGlassSettings(
                 thickness: 5,
                 ambientStrength: 0.5,
@@ -82,7 +84,8 @@ class ManualCompanyDialog extends HookWidget {
               spacing: 10,
               children: [
                 GlassButton(
-                  icon: const Icon(Icons.close),
+                  icon: Icon(Icons.close,
+                      color: Theme.of(context).colorScheme.onSurface),
                   label: 'Cancel',
                   height: 50,
                   width: 50,
@@ -96,7 +99,8 @@ class ManualCompanyDialog extends HookWidget {
                   onTap: () => Navigator.pop(context),
                 ),
                 GlassButton(
-                  icon: const Icon(Icons.check),
+                  icon: Icon(Icons.check,
+                      color: Theme.of(context).colorScheme.onSurface),
                   label: 'Done',
                   height: 50,
                   width: 50,

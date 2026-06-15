@@ -31,6 +31,10 @@ class UpdateNameDialog extends HookWidget {
             controller: nameController,
             textInputAction: TextInputAction.done,
             placeholder: 'Enter contact name',
+            placeholderStyle:
+                TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            textStyle:
+                TextStyle(color: Theme.of(context).colorScheme.onSurface),
           ),
           if (sheetError.value != null) ...[
             const SizedBox(height: 8),
@@ -50,7 +54,8 @@ class UpdateNameDialog extends HookWidget {
                 onTap: () {
                   Navigator.of(context).pop();
                 },
-                icon: const Icon(Icons.close),
+                icon: Icon(Icons.close,
+                    color: Theme.of(context).colorScheme.onSurface),
               ),
               GlassButton(
                 onTap: () {
@@ -61,7 +66,8 @@ class UpdateNameDialog extends HookWidget {
                   }
                   Navigator.of(context).pop(value);
                 },
-                icon: const Icon(Icons.check),
+                icon: Icon(Icons.check,
+                    color: Theme.of(context).colorScheme.onSurface),
               ),
             ],
           ),

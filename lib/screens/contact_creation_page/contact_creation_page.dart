@@ -319,7 +319,8 @@ class ContactCreationPage extends HookWidget {
                       shape: const LiquidRoundedRectangle(borderRadius: 40),
                       enabled: !isSaving.value && !isCropping.value,
                       onTap: cropImage,
-                      icon: const Icon(Icons.crop),
+                      icon: Icon(Icons.crop,
+                          color: Theme.of(context).colorScheme.onSurface),
                       settings: LiquidGlassSettings(
                         thickness: 5,
                         ambientStrength: 0.5,
@@ -352,7 +353,8 @@ class ContactCreationPage extends HookWidget {
                           contactName.value = updatedName;
                         }
                       },
-                      icon: const Icon(Icons.edit),
+                      icon: Icon(Icons.edit,
+                          color: Theme.of(context).colorScheme.onSurface),
                     ),
                   ),
                   Padding(
@@ -434,6 +436,10 @@ class ContactCreationPage extends HookWidget {
             controller: phoneController,
             keyboardType: TextInputType.phone,
             placeholder: 'Enter phone number',
+            placeholderStyle:
+                TextStyle(color: Theme.of(context).colorScheme.onSurface),
+            textStyle:
+                TextStyle(color: Theme.of(context).colorScheme.onSurface),
             inputFormatters: [
               FilteringTextInputFormatter.digitsOnly,
             ],
