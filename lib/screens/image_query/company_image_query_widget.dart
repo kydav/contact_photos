@@ -21,6 +21,7 @@ class CompanyImageQueryWidget extends HookWidget {
     required this.companyWebsiteUrl,
     required this.onImageSelected,
     required this.imageOptions,
+    required this.searchGuard,
     super.key,
   });
 
@@ -28,6 +29,10 @@ class CompanyImageQueryWidget extends HookWidget {
   final String? companyWebsiteUrl;
   final CompanyImageSelectedCallback onImageSelected;
   final ValueNotifier<List<CompanyImageOption>> imageOptions;
+
+  /// Lifted to HomePage so it survives page unmount/remount. True means the
+  /// search already ran for the current company — don't re-query on remount.
+  final ValueNotifier<bool> searchGuard;
 
   @override
   Widget build(BuildContext context) {
@@ -55,7 +60,10 @@ class CompanyImageQueryWidget extends HookWidget {
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        if (companyName != null && companyWebsiteUrl != null) {
+        if (companyName != null &&
+            companyWebsiteUrl != null &&
+            !searchGuard.value) {
+          searchGuard.value = true;
           SearchHelpers().searchWebsiteImages(
             companyName,
             companyWebsiteUrl,
@@ -167,7 +175,10 @@ class CompanyImageQueryWidget extends HookWidget {
                                     Visibility(
                                       visible: !isLoading.value,
                                       child: GlassButton(
-                                        icon: const Icon(Icons.check),
+                                        icon: Icon(Icons.check,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface),
                                         label: 'Done',
                                         height: 50,
                                         width: 50,

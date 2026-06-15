@@ -24,6 +24,7 @@ class HomePage extends HookWidget {
     final resetSeed = useState(0);
     final imageStepSeed = useState(0);
     final imageOptions = useState<List<CompanyImageOption>>([]);
+    final imageSearchGuard = useState(false);
 
     useEffect(() {
       void listener() {
@@ -51,6 +52,7 @@ class HomePage extends HookWidget {
       selectedImage.value = null;
       resetSeed.value = resetSeed.value + 1;
       imageOptions.value = [];
+      imageSearchGuard.value = false;
       await goToPage(0);
     }
 
@@ -65,13 +67,14 @@ class HomePage extends HookWidget {
               0 => const Text('Search Companies'),
               1 => const Text('Select Image'),
               2 => const Text('Create Contact'),
-              3 => const Text('Complete'),
+              3 => const Text(''),
               _ => null,
             },
             centerTitle: false,
             leading: showLeading.value
                 ? GlassButton(
-                    icon: const Icon(Icons.arrow_back_ios_new),
+                    icon: Icon(Icons.arrow_back_ios_new,
+                        color: Theme.of(context).colorScheme.onSurface),
                     iconSize: 14,
                     onTap: () {
                       controller.previousPage(
@@ -94,6 +97,7 @@ class HomePage extends HookWidget {
                     selectedCompany.value = company;
                     selectedImage.value = null;
                     imageOptions.value = [];
+                    imageSearchGuard.value = false;
                     imageStepSeed.value = imageStepSeed.value + 1;
                     unawaited(goToPage(1));
                   },
@@ -107,6 +111,7 @@ class HomePage extends HookWidget {
                   companyName: selectedCompany.value?.name,
                   companyWebsiteUrl: selectedCompany.value?.websiteUrl,
                   imageOptions: imageOptions,
+                  searchGuard: imageSearchGuard,
                   onImageSelected: (imageOption) {
                     selectedImage.value = imageOption;
                     unawaited(goToPage(2));

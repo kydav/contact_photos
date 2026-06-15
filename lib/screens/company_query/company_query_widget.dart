@@ -66,7 +66,14 @@ class CompanyQueryWidget extends HookWidget {
             Expanded(
               child: GlassSearchBar(
                 controller: queryController,
+                autofocus: true,
                 onSubmitted: (_) => searchCompanies(),
+                searchIconColor: Theme.of(context).colorScheme.onSurface,
+                cancelButtonColor: Theme.of(context).colorScheme.onSurface,
+                textStyle:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
+                placeholderStyle:
+                    TextStyle(color: Theme.of(context).colorScheme.onSurface),
               ),
             ),
           ]),
@@ -107,7 +114,9 @@ class CompanyQueryWidget extends HookWidget {
                           spacing: 5,
                           children: [
                             GlassButton(
-                              icon: const Icon(Icons.edit),
+                              icon: Icon(Icons.edit,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
                               label: 'Edit',
                               height: 50,
                               width: 50,
@@ -135,7 +144,9 @@ class CompanyQueryWidget extends HookWidget {
                               },
                             ),
                             GlassButton(
-                              icon: const Icon(Icons.check),
+                              icon: Icon(Icons.check,
+                                  color:
+                                      Theme.of(context).colorScheme.onSurface),
                               label: 'Done',
                               height: 50,
                               width: 50,
@@ -147,14 +158,15 @@ class CompanyQueryWidget extends HookWidget {
                                 glassColor: Colors.blue.withValues(alpha: 0.1),
                               ),
                               onTap: () {
-                              unawaited(
-                                AnalyticsService.searchPageSelectedCompanyResult(
-                                  name: company.name,
-                                  url: company.websiteUrl,
-                                ),
-                              );
-                              onCompanySelected(company);
-                            },
+                                unawaited(
+                                  AnalyticsService
+                                      .searchPageSelectedCompanyResult(
+                                    name: company.name,
+                                    url: company.websiteUrl,
+                                  ),
+                                );
+                                onCompanySelected(company);
+                              },
                             ),
                           ],
                         ),
@@ -171,8 +183,8 @@ class CompanyQueryWidget extends HookWidget {
                   const EdgeInsets.symmetric(horizontal: 10.0, vertical: 20),
               child: GlassButton.custom(
                 onTap: () async {
-                  unawaited(
-                      AnalyticsService.searchPageEnteredManualUrlButtonTapped());
+                  unawaited(AnalyticsService
+                      .searchPageEnteredManualUrlButtonTapped());
                   final selected =
                       await showModalBottomSheet<CompanySearchResult>(
                     context: context,
@@ -184,12 +196,13 @@ class CompanyQueryWidget extends HookWidget {
                   );
 
                   if (selected != null) {
-                    unawaited(AnalyticsService.searchPageEnteredManualUrlDialogSaved(
-                        url: selected.websiteUrl));
+                    unawaited(
+                        AnalyticsService.searchPageEnteredManualUrlDialogSaved(
+                            url: selected.websiteUrl));
                     onCompanySelected(selected);
                   } else {
-                    unawaited(
-                        AnalyticsService.searchPageEnteredManualUrlDialogClosed());
+                    unawaited(AnalyticsService
+                        .searchPageEnteredManualUrlDialogClosed());
                   }
                 },
                 shape: const LiquidRoundedRectangle(borderRadius: 40),
