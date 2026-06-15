@@ -21,7 +21,6 @@ class CompanyImageQueryWidget extends HookWidget {
     required this.companyWebsiteUrl,
     required this.onImageSelected,
     required this.imageOptions,
-    this.onEmailDiscovered,
     super.key,
   });
 
@@ -29,7 +28,6 @@ class CompanyImageQueryWidget extends HookWidget {
   final String? companyWebsiteUrl;
   final CompanyImageSelectedCallback onImageSelected;
   final ValueNotifier<List<CompanyImageOption>> imageOptions;
-  final void Function(String email)? onEmailDiscovered;
 
   @override
   Widget build(BuildContext context) {
@@ -69,7 +67,6 @@ class CompanyImageQueryWidget extends HookWidget {
             hasSearchedSocial,
             progressValue,
             progressLabel,
-            onEmailDiscovered: onEmailDiscovered,
           );
         }
       });
