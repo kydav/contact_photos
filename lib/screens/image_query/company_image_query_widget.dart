@@ -175,7 +175,10 @@ class CompanyImageQueryWidget extends HookWidget {
                                     Visibility(
                                       visible: !isLoading.value,
                                       child: GlassButton(
-                                        icon: const Icon(Icons.check),
+                                        icon: Icon(Icons.check,
+                                            color: Theme.of(context)
+                                                .colorScheme
+                                                .onSurface),
                                         label: 'Done',
                                         height: 50,
                                         width: 50,

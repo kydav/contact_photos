@@ -67,13 +67,14 @@ class HomePage extends HookWidget {
               0 => const Text('Search Companies'),
               1 => const Text('Select Image'),
               2 => const Text('Create Contact'),
-              3 => const Text('Complete'),
+              3 => const Text(''),
               _ => null,
             },
             centerTitle: false,
             leading: showLeading.value
                 ? GlassButton(
-                    icon: const Icon(Icons.arrow_back_ios_new),
+                    icon: Icon(Icons.arrow_back_ios_new,
+                        color: Theme.of(context).colorScheme.onSurface),
                     iconSize: 14,
                     onTap: () {
                       controller.previousPage(
