@@ -22,7 +22,6 @@ class CompanyImageQueryWidget extends HookWidget {
     required this.onImageSelected,
     required this.imageOptions,
     required this.searchGuard,
-    this.onEmailDiscovered,
     super.key,
   });
 
@@ -30,10 +29,10 @@ class CompanyImageQueryWidget extends HookWidget {
   final String? companyWebsiteUrl;
   final CompanyImageSelectedCallback onImageSelected;
   final ValueNotifier<List<CompanyImageOption>> imageOptions;
+
   /// Lifted to HomePage so it survives page unmount/remount. True means the
   /// search already ran for the current company — don't re-query on remount.
   final ValueNotifier<bool> searchGuard;
-  final void Function(String email)? onEmailDiscovered;
 
   @override
   Widget build(BuildContext context) {
@@ -76,7 +75,6 @@ class CompanyImageQueryWidget extends HookWidget {
             hasSearchedSocial,
             progressValue,
             progressLabel,
-            onEmailDiscovered: onEmailDiscovered,
           );
         }
       });

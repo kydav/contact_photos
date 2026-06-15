@@ -36,8 +36,7 @@ class SearchHelpers {
       ValueNotifier<bool> hasSearchedLogosWorld,
       ValueNotifier<bool> hasSearchedSocial,
       ValueNotifier<double?> progressValue,
-      ValueNotifier<String?> progressLabel, {
-      void Function(String email)? onEmailDiscovered}) async {
+      ValueNotifier<String?> progressLabel) async {
     if (companyName == null || companyWebsiteUrl == null) {
       errorText.value = 'Select a company first to search for images.';
       imageOptions.value = [];
@@ -56,17 +55,6 @@ class SearchHelpers {
     try {
       final excludePlatformLogos = _shouldExcludePlatformLogos(companyName);
       final allowSocialAssetUrls = !excludePlatformLogos;
-
-      // Kick off email extraction concurrently — doesn't block image search.
-      if (onEmailDiscovered != null) {
-        unawaited(
-          ImageLogoHelpers.queryEmailFromWebsite(companyWebsiteUrl).then(
-            (email) {
-              if (email != null) onEmailDiscovered(email);
-            },
-          ),
-        );
-      }
 
       final primaryUrls = await ImageLogoHelpers.queryImageUrlsFromWebsite(
         companyName: companyName,
