@@ -1,6 +1,5 @@
 import 'dart:async';
 import 'dart:math' as math;
-import 'dart:typed_data';
 
 import 'package:contact_photos/helpers/search_helpers.dart';
 import 'package:contact_photos/models/company_image_option.dart';
@@ -97,7 +96,11 @@ class CompanyImageQueryWidget extends HookWidget {
 
     useEffect(() {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        // if (companyName != null && companyWebsiteUrl != null) {
+        loadImages();
+        // if (companyName != null &&
+        //     companyWebsiteUrl != null &&
+        //     !searchGuard.value) {
+        //   searchGuard.value = true;
         //   SearchHelpers().searchWebsiteImages(
         //     companyName,
         //     companyWebsiteUrl,
@@ -111,24 +114,6 @@ class CompanyImageQueryWidget extends HookWidget {
         //     progressLabel,
         //   );
         // }
-        loadImages();
-        if (companyName != null &&
-            companyWebsiteUrl != null &&
-            !searchGuard.value) {
-          searchGuard.value = true;
-          SearchHelpers().searchWebsiteImages(
-            companyName,
-            companyWebsiteUrl,
-            errorText,
-            imageOptions,
-            isLoading,
-            hasSearchedWebsite,
-            hasSearchedLogosWorld,
-            hasSearchedSocial,
-            progressValue,
-            progressLabel,
-          );
-        }
       });
       return null;
     }, [imageOptions, companyName, companyWebsiteUrl]);
