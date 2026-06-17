@@ -80,7 +80,7 @@ jobs:
           fi
           flutter build ipa --release \
             --export-options-plist=ios/ExportOptions.plist \
-            --build-number=${{ github.run_number }} \
+            --build-number=$((1000 + ${{ github.run_number }})) \
             $DART_DEFINES \
             --verbose 2>&1 | tail -100
           # Surface the full xcodebuild log on failure
