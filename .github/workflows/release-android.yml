@@ -83,3 +83,4 @@ jobs:
           packageName: app.auaha.contactphotos
           releaseFiles: build/app/outputs/bundle/release/app-release.aab
           tracks: internal
+          status: draft
