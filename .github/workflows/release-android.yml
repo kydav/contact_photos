@@ -54,7 +54,7 @@ jobs:
           if [ "${{ inputs.disable_paywall }}" = "true" ]; then
             DART_DEFINES="$DART_DEFINES --dart-define=PAYWALL_ENABLED=false"
           fi
-          flutter build appbundle --release $DART_DEFINES
+          flutter build appbundle --release --build-number=${{ github.run_number }} $DART_DEFINES
 
       - name: Build release APK
         run: |
@@ -62,7 +62,7 @@ jobs:
           if [ "${{ inputs.disable_paywall }}" = "true" ]; then
             DART_DEFINES="$DART_DEFINES --dart-define=PAYWALL_ENABLED=false"
           fi
-          flutter build apk --release $DART_DEFINES
+          flutter build apk --release --build-number=${{ github.run_number }} $DART_DEFINES
 
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v4
