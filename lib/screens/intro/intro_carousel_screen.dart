@@ -99,7 +99,7 @@ class IntroCarouselScreen extends HookWidget {
                       IntroSlide(
                         title: 'Contacts Access',
                         body:
-                            'We need read and write access to your contacts to create a new contact with the company name, phone number, and selected logo.\n\nYour contact data never leaves your device. Company searches may be sent to Google Gemini AI to identify matching businesses.',
+                            'We need read and write access to your contacts to create a new contact with the company name, phone number, and selected logo.\n\nYour contacts never leave your device. Company searches may be sent to Google Gemini AI to identify matching businesses.',
                         icon: Icons.contacts_rounded,
                       ),
                     ],
@@ -136,7 +136,7 @@ class IntroCarouselScreen extends HookWidget {
                   enabled: !isRequestingPermission.value,
                   onTap: handleNext,
                   shape: const LiquidRoundedRectangle(borderRadius: 40),
-                  child: Text(currentPage.value == 0 ? 'Next' : 'Allow Access'),
+                  child: Text(currentPage.value == 0 ? 'Next' : 'Coninue'),
                 ),
                 if (currentPage.value == 1) ...[
                   TextButton(
