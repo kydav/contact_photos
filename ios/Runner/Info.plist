@@ -29,7 +29,7 @@
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>NSContactsUsageDescription</key>
-	<string>Contact Photos needs contacts access to create contacts with logos for common message senders.</string>
+	<string>Contact Photos needs contacts access to create contacts with logos for common message senders.  Your contacts never leave your device.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>
