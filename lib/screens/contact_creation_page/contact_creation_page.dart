@@ -11,6 +11,7 @@ import 'package:contact_photos/services/preferences_service.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_contacts/flutter_contacts.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
 import 'package:image/image.dart' as img;
 import 'package:image_cropper/image_cropper.dart';
@@ -303,167 +304,205 @@ class ContactCreationPage extends HookWidget {
       }
     }
 
-    return SingleChildScrollView(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(2, 30, 2, 20),
-            child: GlassCard(
-              child: Stack(
-                children: [
-                  Positioned(
-                    top: 2,
-                    right: 0,
-                    child: GlassButton(
-                      shape: const LiquidRoundedRectangle(borderRadius: 40),
-                      enabled: !isSaving.value && !isCropping.value,
-                      onTap: cropImage,
-                      icon: Icon(Icons.crop,
-                          color: Theme.of(context).colorScheme.onSurface),
-                      settings: LiquidGlassSettings(
-                        thickness: 5,
-                        ambientStrength: 0.5,
-                        lightIntensity: 0.8,
-                        lightAngle: 0.75 * math.pi,
-                        glassColor: Colors.blue.withValues(alpha: 0.1),
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    bottom: 2,
-                    right: 0,
-                    child: GlassButton(
-                      enabled: !isSaving.value,
-                      onTap: () async {
-                        unawaited(AnalyticsService
-                            .creationPageEditContactNameTapped());
-                        final updatedName = await showModalBottomSheet<String>(
-                          context: context,
-                          backgroundColor: Colors.transparent,
-                          isScrollControlled: true,
-                          builder: (sheetContext) =>
-                              UpdateNameDialog(name: contactName.value),
-                        );
+    final contactsPermissionState = useState<ContactsPermissionResult?>(null);
+    useEffect(() {
+      ContactsService.hasContactsPermission().then((hasPermission) {
+        contactsPermissionState.value = hasPermission
+            ? ContactsPermissionResult.granted
+            : ContactsPermissionResult.denied;
+      });
+      return null;
+    }, []);
 
-                        if (updatedName != null && updatedName.isNotEmpty) {
-                          unawaited(AnalyticsService
-                              .creationPageEditContactNameDialogSaved(
-                                  name: updatedName));
-                          contactName.value = updatedName;
-                        }
-                      },
-                      icon: Icon(Icons.edit,
-                          color: Theme.of(context).colorScheme.onSurface),
+    useOnAppLifecycleStateChange((previous, next) {
+      switch (next) {
+        case AppLifecycleState.resumed:
+          unawaited(
+              ContactsService.hasContactsPermission().then((hasPermission) {
+            contactsPermissionState.value = hasPermission
+                ? ContactsPermissionResult.granted
+                : ContactsPermissionResult.denied;
+          }));
+          break;
+        case AppLifecycleState.inactive:
+        case AppLifecycleState.paused:
+        case AppLifecycleState.hidden:
+        case AppLifecycleState.detached:
+          break;
+      }
+    });
+
+    return SingleChildScrollView(
+        child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(2, 30, 2, 20),
+          child: GlassCard(
+            child: Stack(
+              children: [
+                Positioned(
+                  top: 2,
+                  right: 0,
+                  child: GlassButton(
+                    shape: const LiquidRoundedRectangle(borderRadius: 40),
+                    enabled: !isSaving.value && !isCropping.value,
+                    onTap: cropImage,
+                    icon: Icon(Icons.crop,
+                        color: Theme.of(context).colorScheme.onSurface),
+                    settings: LiquidGlassSettings(
+                      thickness: 5,
+                      ambientStrength: 0.5,
+                      lightIntensity: 0.8,
+                      lightAngle: 0.75 * math.pi,
+                      glassColor: Colors.blue.withValues(alpha: 0.1),
                     ),
                   ),
-                  Padding(
-                    padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        ClipOval(
-                          child: Container(
-                            width: 140,
-                            height: 140,
-                            color: bubbleBackground.value ==
-                                    _BubbleBackground.black
-                                ? Colors.black
-                                : Colors.white,
-                            child: Image.memory(
-                              previewPhotoBytes,
-                              fit: BoxFit.cover,
-                            ),
+                ),
+                Positioned(
+                  bottom: 2,
+                  right: 0,
+                  child: GlassButton(
+                    enabled: !isSaving.value,
+                    onTap: () async {
+                      unawaited(
+                          AnalyticsService.creationPageEditContactNameTapped());
+                      final updatedName = await showModalBottomSheet<String>(
+                        context: context,
+                        backgroundColor: Colors.transparent,
+                        isScrollControlled: true,
+                        builder: (sheetContext) =>
+                            UpdateNameDialog(name: contactName.value),
+                      );
+
+                      if (updatedName != null && updatedName.isNotEmpty) {
+                        unawaited(AnalyticsService
+                            .creationPageEditContactNameDialogSaved(
+                                name: updatedName));
+                        contactName.value = updatedName;
+                      }
+                    },
+                    icon: Icon(Icons.edit,
+                        color: Theme.of(context).colorScheme.onSurface),
+                  ),
+                ),
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipOval(
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          color:
+                              bubbleBackground.value == _BubbleBackground.black
+                                  ? Colors.black
+                                  : Colors.white,
+                          child: Image.memory(
+                            previewPhotoBytes,
+                            fit: BoxFit.cover,
                           ),
                         ),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Expanded(
-                              child: Column(
-                                children: [
-                                  Text(
-                                    contactName.value,
-                                    style: theme.textTheme.titleLarge?.copyWith(
-                                      fontWeight: FontWeight.w700,
-                                    ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Column(
+                              children: [
+                                Text(
+                                  contactName.value,
+                                  style: theme.textTheme.titleLarge?.copyWith(
+                                    fontWeight: FontWeight.w700,
                                   ),
-                                  const SizedBox(height: 2),
-                                  Text(company.websiteUrl,
-                                      style: theme.textTheme.bodyLarge),
-                                ],
-                              ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(company.websiteUrl,
+                                    style: theme.textTheme.bodyLarge),
+                              ],
                             ),
-                          ],
-                        ),
-                      ],
-                    ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-          if (hasTransparentBackground) ...[
-            const SizedBox(height: 8),
-            const Text('Transparent background detected. Bubble background:'),
-            RadioGroup<_BubbleBackground>(
-              groupValue: bubbleBackground.value,
-              onChanged: (value) {
-                if (!isSaving.value && value != null) {
-                  bubbleBackground.value = value;
-                }
-              },
-              child: const Column(
-                children: [
-                  RadioListTile<_BubbleBackground>(
-                    dense: true,
-                    value: _BubbleBackground.white,
-                    title: Text('White'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                  RadioListTile<_BubbleBackground>(
-                    dense: true,
-                    value: _BubbleBackground.black,
-                    title: Text('Black'),
-                    contentPadding: EdgeInsets.zero,
-                  ),
-                ],
-              ),
+        ),
+        if (hasTransparentBackground) ...[
+          const SizedBox(height: 8),
+          const Text('Transparent background detected. Bubble background:'),
+          RadioGroup<_BubbleBackground>(
+            groupValue: bubbleBackground.value,
+            onChanged: (value) {
+              if (!isSaving.value && value != null) {
+                bubbleBackground.value = value;
+              }
+            },
+            child: const Column(
+              children: [
+                RadioListTile<_BubbleBackground>(
+                  dense: true,
+                  value: _BubbleBackground.white,
+                  title: Text('White'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+                RadioListTile<_BubbleBackground>(
+                  dense: true,
+                  value: _BubbleBackground.black,
+                  title: Text('Black'),
+                  contentPadding: EdgeInsets.zero,
+                ),
+              ],
             ),
-          ],
-          const SizedBox(height: 4),
-          GlassTextField(
-            controller: phoneController,
-            keyboardType: TextInputType.phone,
-            placeholder: 'Enter phone number',
-            placeholderStyle:
-                TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            textStyle:
-                TextStyle(color: Theme.of(context).colorScheme.onSurface),
-            inputFormatters: [
-              FilteringTextInputFormatter.digitsOnly,
-            ],
           ),
-          if (localError.value != null) ...[
-            const SizedBox(height: 8),
-            Text(
-              localError.value!,
-              style: TextStyle(color: Theme.of(context).colorScheme.error),
-            ),
-          ],
-          const SizedBox(height: 10),
-          GlassButton.custom(
-            enabled: !isSaving.value,
-            onTap: () => unawaited(createContact()),
-            shape: const LiquidRoundedRectangle(borderRadius: 40),
-            child: const Text('Create Contact'),
-          ),
-          if (isSaving.value) ...[
-            const SizedBox(height: 8),
-            const LinearProgressIndicator(),
-          ],
         ],
-      ),
-    );
+        const SizedBox(height: 4),
+        GlassTextField(
+          controller: phoneController,
+          keyboardType: TextInputType.phone,
+          placeholder: 'Enter phone number',
+          placeholderStyle:
+              TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          textStyle: TextStyle(color: Theme.of(context).colorScheme.onSurface),
+          inputFormatters: [
+            FilteringTextInputFormatter.digitsOnly,
+          ],
+        ),
+        if (localError.value != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            localError.value!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+        ],
+        const SizedBox(height: 10),
+        GlassButton.custom(
+          enabled: !isSaving.value &&
+              contactsPermissionState.value == ContactsPermissionResult.granted,
+          onTap: () => unawaited(createContact()),
+          shape: const LiquidRoundedRectangle(borderRadius: 40),
+          child: const Text('Create Contact'),
+        ),
+        if (isSaving.value) ...[
+          const SizedBox(height: 8),
+          const LinearProgressIndicator(),
+        ],
+        if (contactsPermissionState.value !=
+            ContactsPermissionResult.granted) ...[
+          const SizedBox(height: 20),
+          const Text('Please grant contacts permission to create contact.'),
+          const SizedBox(height: 8),
+          GlassButton.custom(
+            shape: const LiquidRoundedRectangle(borderRadius: 40),
+            onTap: () => unawaited(FlutterContacts.permissions.openSettings()),
+            child: const Text('Open Settings'),
+          ),
+        ]
+      ],
+    ));
   }
 }

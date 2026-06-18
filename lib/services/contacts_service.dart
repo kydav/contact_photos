@@ -9,6 +9,14 @@ enum ContactsPermissionResult {
 }
 
 class ContactsService {
+  static Future<bool> hasContactsPermission() async {
+    final permissionStatus = await FlutterContacts.permissions.check(
+      PermissionType.readWrite,
+    );
+    return permissionStatus == PermissionStatus.granted ||
+        permissionStatus == PermissionStatus.limited;
+  }
+
   static Future<ContactsPermissionResult> requestContactsPermission() async {
     final permissionStatus = await FlutterContacts.permissions.request(
       PermissionType.readWrite,
