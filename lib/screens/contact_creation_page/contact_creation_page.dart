@@ -246,6 +246,14 @@ class ContactCreationPage extends HookWidget {
     }
 
     Future<void> createContact() async {
+      final permissionGranted =
+          await ContactsService.requestContactsPermission();
+      if (permissionGranted != ContactsPermissionResult.granted) {
+        localError.value =
+            'Please grant contacts permission to create contact. Please visit settings and allow contacts access to create contact.';
+        return;
+      }
+
       final phoneNumber = phoneController.text.trim();
       if (phoneNumber.isEmpty) {
         localError.value = 'Please enter a phone number.';
@@ -472,17 +480,9 @@ class ContactCreationPage extends HookWidget {
             FilteringTextInputFormatter.digitsOnly,
           ],
         ),
-        if (localError.value != null) ...[
-          const SizedBox(height: 8),
-          Text(
-            localError.value!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
-          ),
-        ],
         const SizedBox(height: 10),
         GlassButton.custom(
-          enabled: !isSaving.value &&
-              contactsPermissionState.value == ContactsPermissionResult.granted,
+          enabled: !isSaving.value,
           onTap: () => unawaited(createContact()),
           shape: const LiquidRoundedRectangle(borderRadius: 40),
           child: const Text('Create Contact'),
@@ -494,7 +494,11 @@ class ContactCreationPage extends HookWidget {
         if (contactsPermissionState.value !=
             ContactsPermissionResult.granted) ...[
           const SizedBox(height: 20),
-          const Text('Please grant contacts permission to create contact.'),
+          Text(
+            localError.value ??
+                'Please grant contacts permission to create contact. Please visit settings and allow contacts access to create contact.',
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
           const SizedBox(height: 8),
           GlassButton.custom(
             shape: const LiquidRoundedRectangle(borderRadius: 40),

@@ -136,7 +136,7 @@ class IntroCarouselScreen extends HookWidget {
                   enabled: !isRequestingPermission.value,
                   onTap: handleNext,
                   shape: const LiquidRoundedRectangle(borderRadius: 40),
-                  child: Text(currentPage.value == 0 ? 'Next' : 'Coninue'),
+                  child: Text(currentPage.value == 0 ? 'Next' : 'Continue'),
                 ),
                 if (currentPage.value == 1) ...[
                   TextButton(
