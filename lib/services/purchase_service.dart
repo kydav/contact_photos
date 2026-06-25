@@ -4,7 +4,7 @@ import 'package:contact_photos/services/preferences_service.dart';
 import 'package:in_app_purchase/in_app_purchase.dart';
 
 class PurchaseService {
-  static const productId = 'unlimited_contacts';
+  static const productId = 'contact_photos_lifetime';
 
   PurchaseService._();
   static final instance = PurchaseService._();
