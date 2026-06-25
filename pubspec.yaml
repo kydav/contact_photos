@@ -35,8 +35,23 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: ^3.0.0
+  flutter_native_splash: ^2.4.3
   flutter_test:
     sdk: flutter
 
+flutter_native_splash:
+  color: "#1c8cfd"
+  image: assets/icons/app_icon_light_1024.png
+  color_dark: "#1c1c1e"
+  image_dark: assets/icons/app_icon_dark_1024.png
+  android_12:
+    color: "#1c8cfd"
+    image: assets/icons/app_icon_light_1024.png
+    color_dark: "#1c1c1e"
+    image_dark: assets/icons/app_icon_dark_1024.png
+  web: false
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/
