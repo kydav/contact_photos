@@ -190,7 +190,8 @@ class _PaywallScreenState extends State<PaywallScreen> {
             const SizedBox(height: 8),
             TextButton(
               onPressed: () {
-                unawaited(AnalyticsService.creationPagePaywallDialogCancelTapped());
+                unawaited(
+                    AnalyticsService.creationPagePaywallDialogCancelTapped());
                 Navigator.of(context).pop(false);
               },
               child: const Text('Cancel'),

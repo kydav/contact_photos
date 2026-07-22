@@ -2,7 +2,7 @@ name: contact_photos
 description: "Know who's texting you"
 publish_to: "none" # Remove this line if you wish to publish to pub.dev
 
-version: 1.0.3+1
+version: 1.0.4+1
 
 environment:
   sdk: ">=3.3.4 <4.0.0"
@@ -26,7 +26,7 @@ dependencies:
   image: ^4.5.4
   image_cropper: ^9.1.0
   image_picker: ^1.1.2
-  in_app_purchase: ^3.2.0
+  in_app_purchase: ^3.3.0
   liquid_glass_widgets: ^0.11.0
   path_provider: ^2.1.5
   shared_preferences: ^2.5.5
@@ -35,8 +35,23 @@ dependencies:
 
 dev_dependencies:
   flutter_lints: ^3.0.0
+  flutter_native_splash: ^2.4.3
   flutter_test:
     sdk: flutter
 
+flutter_native_splash:
+  color: "#1c8cfd"
+  image: assets/icons/app_icon_transparent.png
+  color_dark: "#1c1c1e"
+  image_dark: assets/icons/app_icon_transparent.png
+  android_12:
+    color: "#1c8cfd"
+    image: assets/icons/app_icon_transparent.png
+    color_dark: "#1c1c1e"
+    image_dark: assets/icons/app_icon_transparent.png
+  web: false
+
 flutter:
   uses-material-design: true
+  assets:
+    - assets/icons/
