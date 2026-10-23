@@ -8,7 +8,10 @@ class AiService {
       String query) async {
     debugPrint('Querying Gemini for companies matching: $query');
     final model = FirebaseAI.googleAI().generativeModel(
-      model: 'gemini-2.5-flash',
+      // gemini-2.5-flash is deprecated on the Gemini Developer API (only
+      // previously active projects can still call it, shutdown date TBD), so
+      // this moves to the current stable Flash model.
+      model: 'gemini-3.8-flash',
       generationConfig: GenerationConfig(responseMimeType: 'application/json'),
     );
 
