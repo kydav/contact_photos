@@ -25,6 +25,9 @@ jobs:
 
       - uses: subosito/flutter-action@v2
         with:
+          # Pinned to match local. Unpinned "stable" silently picked up a
+          # newer Flutter whose minimum Gradle (8.14) the project didn't meet.
+          flutter-version: '3.44.0'
           channel: stable
 
       - name: Decode Firebase config files
