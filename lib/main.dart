@@ -4,8 +4,10 @@ import 'package:contact_photos/home_page.dart';
 import 'package:contact_photos/screens/intro/intro_carousel_screen.dart';
 import 'package:contact_photos/services/preferences_service.dart';
 import 'package:contact_photos/services/purchase_service.dart';
+import 'package:firebase_app_check/firebase_app_check.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_crashlytics/firebase_crashlytics.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -23,6 +25,19 @@ void main() {
             : SystemUiOverlayStyle.dark,
       );
       await Firebase.initializeApp();
+
+      // App Check: Firebase rejects AI Logic (Gemini) requests without a
+      // valid token from Nov 2, 2026. App Attest on iOS (15.0+, so no
+      // DeviceCheck fallback needed) and Play Integrity on Android; the debug
+      // providers in debug builds (register their tokens in the console).
+      await FirebaseAppCheck.instance.activate(
+        providerApple: kDebugMode
+            ? const AppleDebugProvider()
+            : const AppleAppAttestProvider(),
+        providerAndroid: kDebugMode
+            ? const AndroidDebugProvider()
+            : const AndroidPlayIntegrityProvider(),
+      );
 
       FlutterError.onError =
           FirebaseCrashlytics.instance.recordFlutterFatalError;
