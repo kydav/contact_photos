@@ -87,7 +87,7 @@ the call. Reading SMS requires being the default SMS app, so that one's out.
 
 **Name (30):** `Contact Photos: Who's Texting` (29)
 **Subtitle (30):** `Business Caller ID & Logos` (26)
-**Keywords (100):** `unknown,number,text,spam,scam,sms,short,code,lookup,company,brand,logo,identify,picture,avatar,sender` (98)
+**Keywords (100):** `unknown,number,text,spam,scam,sms,short,code,lookup,company,brand,logo,identify,picture,avatar` (94)
 
 **Description:**
 > Stop guessing who texted you. Contact Photos turns mystery numbers from businesses into real contacts, with the company's logo, in seconds.
