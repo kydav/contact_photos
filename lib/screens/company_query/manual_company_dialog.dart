@@ -24,7 +24,13 @@ class ManualCompanyDialog extends HookWidget {
         glassColor: Colors.white.withValues(alpha: 0.12),
       ),
       child: Padding(
-        padding: const EdgeInsets.all(24.0),
+        // Lift the sheet above the keyboard.
+        padding: EdgeInsets.fromLTRB(
+          24,
+          24,
+          24,
+          24 + MediaQuery.viewInsetsOf(context).bottom,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,

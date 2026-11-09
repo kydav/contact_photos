@@ -1,5 +1,6 @@
 import 'dart:math' as math;
 
+import 'package:contact_photos/extensions/string_extensions.dart';
 import 'package:contact_photos/models/company_search_result.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_hooks/flutter_hooks.dart';
@@ -44,9 +45,12 @@ class EditCompanyNameDialog extends HookWidget {
         GlassDialogAction(
           label: 'Save',
           onPressed: () {
+            final name = editController.text.trim();
+            final url = urlController.text.trim();
             Navigator.of(context).pop(CompanySearchResult(
-              name: editController.text.trim(),
-              websiteUrl: urlController.text.trim(),
+              name: name.isEmpty ? companySearchResult.name : name,
+              websiteUrl: url.normalizeWebsiteUrl() ??
+                  (url.isEmpty ? companySearchResult.websiteUrl : url),
             ));
           },
         )

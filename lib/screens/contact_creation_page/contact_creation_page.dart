@@ -349,6 +349,64 @@ class ContactCreationPage extends HookWidget {
           child: GlassCard(
             child: Stack(
               children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ClipOval(
+                        child: Container(
+                          width: 140,
+                          height: 140,
+                          color:
+                              bubbleBackground.value == _BubbleBackground.black
+                                  ? Colors.black
+                                  : Colors.white,
+                          child: Image.memory(
+                            previewPhotoBytes,
+                            fit: BoxFit.cover,
+                          ),
+                        ),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Inset clear of the crop and edit buttons on
+                          // the right (and evenly on the left to stay
+                          // centred), so long text can't cover them.
+                          Expanded(
+                            child: Padding(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 56),
+                              child: Column(
+                                children: [
+                                  Text(
+                                    contactName.value,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.titleLarge?.copyWith(
+                                      fontWeight: FontWeight.w700,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 2),
+                                  Text(
+                                    company.websiteUrl,
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                    style: theme.textTheme.bodyLarge,
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+                // Buttons last so they sit on top of the text.
                 Positioned(
                   top: 2,
                   right: 0,
@@ -392,48 +450,6 @@ class ContactCreationPage extends HookWidget {
                     },
                     icon: Icon(Icons.edit,
                         color: Theme.of(context).colorScheme.onSurface),
-                  ),
-                ),
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(2, 2, 2, 2),
-                  child: Column(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      ClipOval(
-                        child: Container(
-                          width: 140,
-                          height: 140,
-                          color:
-                              bubbleBackground.value == _BubbleBackground.black
-                                  ? Colors.black
-                                  : Colors.white,
-                          child: Image.memory(
-                            previewPhotoBytes,
-                            fit: BoxFit.cover,
-                          ),
-                        ),
-                      ),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Expanded(
-                            child: Column(
-                              children: [
-                                Text(
-                                  contactName.value,
-                                  style: theme.textTheme.titleLarge?.copyWith(
-                                    fontWeight: FontWeight.w700,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(company.websiteUrl,
-                                    style: theme.textTheme.bodyLarge),
-                              ],
-                            ),
-                          ),
-                        ],
-                      ),
-                    ],
                   ),
                 ),
               ],

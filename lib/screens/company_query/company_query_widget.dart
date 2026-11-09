@@ -138,8 +138,14 @@ class CompanyQueryWidget extends HookWidget {
                                   },
                                 );
 
+                                // A new list, so the edit shows: changing an
+                                // item in place doesn't rebuild.
                                 if (newCompany != null) {
-                                  companies.value[index] = newCompany;
+                                  companies.value = [
+                                    for (final (i, c)
+                                        in companies.value.indexed)
+                                      i == index ? newCompany : c,
+                                  ];
                                 }
                               },
                             ),
